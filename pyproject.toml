@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "porscheai"
+version = "0.1.0"
+description = "some rl fun with porsche ai"
+authors = ["Andre Ferdinand <andre.ferdinand@uni-mannheim.de>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.4"
+gymnasium = "0.28.1"
+scipy = "^1.11.1"
+stable-baselines3 = "^2.0.0"
+tensorboard = "^2.14.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
