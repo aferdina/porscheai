@@ -1,61 +1,34 @@
 """ base environment for driver gym environment
 """
 from dataclasses import dataclass
+from typing import List, Tuple
+from strenum import StrEnum
 import gymnasium as gym
 from gymnasium.spaces import Dict, Box, MultiDiscrete
 import numpy as np
 import math
+from .helpclasses import GeneralGameconfigs, ReferenceTrajectoryConfigs, PhysicConfigs
 
-GRAVITY = 9.81
-
-
-@dataclass
-class PhysicConfigs:
-    vehicleweight: int = 2500
-    engine_power: int = 400000
-    engine_n_max_power: int = 6000
-    engine_n_max: int = 22000
-    gearbox_ratio: int = 8
-    tire_radius: float = 0.3
-    rho_air: float = 1.2
-    vehicle_w: float = 0.25
-    vehcile_a: float = 2.2
-    tire_fr: float = 0.01
+genral_game_configs = GeneralGameconfigs()
+trajectory_configs = ReferenceTrajectoryConfigs()
+physic_configs = PhysicConfigs()
 
 
-@dataclass
-class Gameconfigs:
-    rewardscale: float = 1.0
-    min_norm_obs: float = -1.0
-    max_norm_obs: float = 1.0
-    min_norm_act: float = -1
-    max_norm_act: float = 1
-    v_Car_min = min(ref_speeds)
-    v_Car_max = max(ref_speeds)
-    DK_Soll_min = 0
-    DK_Soll_max = 100
-    Bremse_S_min = 0
-    Bremse_S_max = 10
-
-
-class simpleDriver(gym.Env):
+class SimpleDriver(gym.Env):
     """gym environment to simulate a simple car driver"""
 
     def __init__(
         self,
-        ref_secs: list = [0, 2, 4, 5, 7, 10],
-        ref_speeds: list = [0, 10, 20, 15, 20, 15],
-        len_outlook: int = 1,
-        num_act: int = 2,
-        v_Car_Init=None,
+        game_configs: GeneralGameconfigs = genral_game_configs,
+        trajectory_configs: ReferenceTrajectoryConfigs = trajectory_configs,
+        physic_configs: PhysicConfigs = physic_configs,
     ):
         """
-        Args:
-        - ref_secs, list, used to generate a reference trajectory, contains second markers for reference speeds from ref_speeds
-        - ref_speeds, list, used to generate a reference trajectory, contains reference speeds in km/h
 
-        - len_outlook, int, how many future v_Soll values to use for the observation
-        - v_car_init: float, initial speed of the car in km/h, if None is first reference speed ref_speeds[0]
+        Args:
+            game_configs (GeneralGameconfigs, optional): _description_. Defaults to genral_game_configs.
+            trajectory_configs (ReferenceTrajectory, optional): _description_. Defaults to trajectory_configs.
+            physic_configs (PhysicConfigs, optional): _description_. Defaults to physic_configs.
         """
 
         # Initializations
@@ -72,9 +45,6 @@ class simpleDriver(gym.Env):
             self.v_Car_ms = self.ref_speeds[0] / 3.6
         else:
             self.v_Car_ms = v_Car_Init / 3.6
-
-        # Validate Inputs
-        self._validate()
 
         # Episode Length
         self.dtype = np.float32
@@ -125,36 +95,6 @@ class simpleDriver(gym.Env):
 
         self.current_iteration = 0
         self.info = {}
-
-    def _validate(self):
-        """
-        Validates Inputs.
-        """
-
-        errors = []
-        warnings = []
-
-        # Check Errors
-        if len(self.ref_secs) != len(self.ref_speeds):
-            error = f"Reference seconds has a different length than ref speeds. Length ref_secs: {len(self.ref_secs)}, length ref_speeds: {len(self.ref_speeds)}"
-            errors.append(error)
-
-        if self.ref_secs != self.ref_secs.sort():
-            error = f"reference timestamps are not increasing. Reference Timestamps: {self.ref_secs}"
-
-        # Check Warnings
-        # No warnings to check in this environment
-
-        if errors:
-            print("Errors:\n")
-            for error in errors:
-                print(error)
-            raise KeyError("See errors above.")
-
-        if warnings:
-            print("\nWarnings:\n")
-            for warning in warnings:
-                print(warning)
 
     def _reshape_to_length_n(self, array: np.array, length: int) -> np.array:
         """
