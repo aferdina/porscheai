@@ -106,42 +106,52 @@ class GeneralGameconfigs:
     outlook_length: int = 1  # number of timesteps to look in the future
 
 
+TRAJ_X_LABEL = "Time (Sec.)"
+TRAJ_Y_LABEL = "Speed (m/s)"
+PLOT_TITLE = "Reference Trajectory"
+
+
+def plot_reference_trajectory(
+    traj_configs: ReferenceTrajectory, save_path: str | None = None
+) -> None:
+    """plot/ save trajectory created from configuration
+
+    Args:
+        traj_configs (ReferenceTrajectory): configurations for trajectory
+        save_path (str| None): path to save trajectory, if None trajectory is not saved.
+        Defaults to None
+    """
+    time_array = create_reference_trajecotry(
+        reference_traj_conf=traj_configs,
+    )
+    x_ticks = np.linspace(
+        traj_configs.first_time_step,
+        traj_configs.last_time_step,
+        num=traj_configs.total_timesteps,
+    )
+    plt.plot(x_ticks, time_array)
+    plt.xlabel(TRAJ_X_LABEL)
+    plt.ylabel(TRAJ_Y_LABEL)
+    plt.title(PLOT_TITLE)
+    plt.grid()
+    plt.show()
+    if save_path is not None:
+        plt.savefig(save_path)
+
+
 __all__ = [
     GeneralGameconfigs.__name__,
     ReferenceTrajectory.__name__,
     PhysicConfigs.__name__,
+    create_reference_trajecotry.__name__,
 ]
 
 
-# if __name__ == "__main__":
-#     reference_configs = ReferenceTrajectory()
-#     time_array = create_reference_trajecotry(
-#         reference_traj_conf=reference_configs,
-#     )
-#     print(time_array)
-#     x_ticks = np.linspace(
-#         reference_configs.first_time_step,
-#         reference_configs.last_time_step,
-#         num=reference_configs.total_timesteps,
-#     )
-#     plt.plot(x_ticks, time_array)
-#     plt.xlabel("Time (Sec.)")
-#     plt.ylabel("Speed (m/s)")
-#     plt.title("Reference Trajectory")
-#     plt.grid()
-#     plt.savefig("Reference Trajectory")
-#     plt.show()
+if __name__ == "__main__":
+    reference_configs = ReferenceTrajectory()
+    plot_reference_trajectory(traj_configs=reference_configs)
 #     reference_configs = ReferenceTrajectory(
 #         seconds_markers=np.array([0, 2, 4, 5, 7, 10], dtype=np.float32),
 #         velocities=np.array([5, 2, 15, 15, 10, 8], dtype=np.float32),
 #     )
-#     time_array = create_reference_trajecotry(
-#         reference_traj_conf=reference_configs,
-#     )
-#     plt.plot(x_ticks, time_array)
-#     plt.xlabel("Time (Sec.)")
-#     plt.ylabel("Speed (m/s)")
-#     plt.title("Reference Trajectory")
-#     plt.grid()
-#     plt.savefig("Reference Trajectory")
-#     plt.show()
+#   plot_reference_trajectory(traj_configs=reference_configs)
