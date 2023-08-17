@@ -35,9 +35,11 @@ class SimpleDriver(gym.Env):
             physic_configs (PhysicConfigs, optional): _description_. Defaults to physic_configs.
         """
 
+        self.physics = physic_configs
         # adding information from configs
         self.total_no_timesteps: int = traj_configs.total_timesteps
         self.outlook_length: int = game_configs.outlook_length
+        self.time_step_size_s: float = traj_configs.simulation_frequency_s
         # Initalization for Integration
         self.vehicle_distance_m: float = 0.0  # distance of vehicle from starting point
 
@@ -213,6 +215,7 @@ class SimpleDriver(gym.Env):
         reward = -(np.abs(v_Car_norm - v_target_norm[0]).astype(float))
         reward = reward * self.reward_scaling
 
+        # update time step
         self.current_time_step += 1
 
         # Check if Round is done
@@ -220,6 +223,16 @@ class SimpleDriver(gym.Env):
             done = True
 
         return obs, reward, done, False, self.info
+
+    def _update_vehicle_distance(self, vehicle_velocity_ms: float) -> None:
+        """update vehicle distance based on vehicle velocity
+
+        Args:
+            vehicle_velocity_ms (float): vehicle velocity to use for update in meters/second
+        """
+        self.vehicle_distance = (
+            self.vehicle_distance + self.time_step_size_s * vehicle_velocity_ms
+        )
 
     def _Car(self, throttle, brake) -> None:
         # parameters for the car
@@ -236,33 +249,20 @@ class SimpleDriver(gym.Env):
         g = 9.81  # m/s²
 
         # Air & Rolling Resistance in Newton
-        F_AirR = (
-            1
-            / 2
-            * rho_air
-            * vehicle_cW
-            * vehicle_A
-            * self.v_Car_ms**2
-            * np.sign(self.v_Car_ms)
+        air_resistance = self.physics.calculate_air_resistance_n(
+            velocity_ms=self.v_Car_ms
         )
-        F_RR = vehicle_weight * tire_fR * g * np.sign(self.v_Car_ms)
+        rolling_resistance = self.physics.calculate_rolling_resistance_n(
+            velocity_ms=self.v_Car_ms
+        )
 
         # Propulsion
-        engine_speed = self.v_Car_ms / tire_radius / 2 / math.pi * 60 * gearbox_ratio
-        if engine_speed < 0:
-            engine_torque_ = 0
-        elif (engine_speed >= 0) and (engine_speed < engine_n_max_power):
-            engine_torque_ = (
-                throttle / 100 * engine_power / engine_n_max_power * 60 / 2 / math.pi
-            )
-        elif (engine_speed > engine_n_max_power) and (engine_speed < engine_n_max):
-            engine_torque_ = (
-                throttle / 100 * engine_power / engine_speed * 60 / 2 / math.pi
-            )
-        elif engine_speed > engine_n_max:
-            engine_torque_ = 0
+        engine_speed = self.physics.calculate_engine_speed(velocity_ms=self.v_Car_ms)
+        engine_torque = self.physics.get_engine_torque_from_speed_in_Nm(
+            engine_speed=engine_speed, throttle=throttle
+        )
 
-        F_Prop = engine_torque_ * gearbox_ratio / tire_radius
+        F_Prop = engine_torque * gearbox_ratio / tire_radius
 
         # Newton
         out_acceleration = ((F_Prop - F_RR - F_AirR) / vehicle_weight) - min(
@@ -271,11 +271,10 @@ class SimpleDriver(gym.Env):
         if (self.v_Car_ms <= 0.1) and (out_acceleration < 0):
             out_acceleration = 0
 
-        # Integrate
-        self.v_Car_ms = self.v_Car_ms + self.sim_stepsize * out_acceleration
-        self.v_Car_kmh = self.v_Car_ms * 3.6
-        self.vehicle_distance = (
-            self.vehicle_distance + self.sim_stepsize * self.v_Car_ms
+        self.v_Car_ms = self.physics.calculate_velocity(
+            old_velocity_ms=self.v_Car_ms,
+            acceleration=out_acceleration,
+            time_step=self.time_step_size_s,
         )
 
     def _un_normalize_2(

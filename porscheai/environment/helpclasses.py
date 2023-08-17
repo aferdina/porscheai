@@ -2,14 +2,15 @@
 """
 from dataclasses import dataclass, field
 from typing import Tuple
+import math
 from strenum import StrEnum
 import numpy as np
 import matplotlib.pyplot as plt
 from porscheai.utils import is_float32_array, is_stricly_increasing
 
 # some physics constants
-GRAVITY = 9.81
-RHO_AIR = 1.2  # density of air in kg/m^3 at around 20 degrees
+GRAVITY_MS = 9.81
+RHO_AIR_KGM3 = 1.2  # density of air in kg/m^3 at around 20 degrees
 FACTOR_KMH_MS = 3.6
 
 # some plotting constants
@@ -22,9 +23,15 @@ PLOT_TITLE = "Reference Trajectory"
 class CarConfigs:
     start_velocity_kmh: float | None = None  # starting velocity in km/h
     start_velocity_ms: float | None = None  # starting velocity in m/s
-    vehicleweight: int = 2500  # weight of vehicle in kg
-    engine_power: int = 400000  # power of engine in W
+    vehicleweight_kg: int = 2500  # weight of vehicle in kg
+    engine_power_w: int = 400000  # power of engine in W
     engine_n_max_power: int = 6000
+    engine_n_max: int = 22000
+    gearbox_ratio: int = 8
+    tire_radius: float = 0.3
+    vehicle_w: float = 0.25
+    vehicle_a: float = 2.2
+    tire_fr: float = 0.01
 
     def __post_init__(self):
         if self.start_velocity_kmh is not None:
@@ -35,18 +42,116 @@ class CarConfigs:
 class PhysicConfigs:
     """configuration class for physics"""
 
-    vehicleweight_kg: int = 2500  # weight of vehicle in kg
-    engine_power_w: int = 400000  # power of engine in W
-    engine_n_max_power_w: int = 6000
-    engine_n_max: int = 22000
-    gearbox_ratio: int = 8
-    tire_radius: float = 0.3
-    vehicle_w: float = 0.25
-    vehicle_a: float = 2.2
-    tire_fr: float = 0.01
     throttle_bounds: Tuple[float, float] = (0.0, 100.0)  # bounds for throttle values
     brake_bounds: Tuple[float, float] = (0.0, 10.0)  # bounds for brake
     car_configs: CarConfigs = field(default=lambda: CarConfigs())
+    _air_resistance_factor: float | None = None
+    _engine_speed_factor: float | None = None
+
+    def __post_init__(self):
+        self._air_resistance_factor = (
+            1 / 2 * RHO_AIR_KGM3 * self.vehicle_w * self.vehicle_a
+        )
+        self._engine_speed_factor = (
+            self.tire_radius / 2 / math.pi * 60 * self.gearbox_ratio
+        )
+
+    def calculate_air_resistance_n(self, velocity_ms: float) -> float:
+        """calculate air resistance in newton based on velocity in meter per second
+
+        Args:
+            velocity_ms (float): velocity
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            float: _description_
+        """
+        return (
+            self._air_resistance_factor
+            * velocity_ms**2
+            * math.copysign(1, velocity_ms)
+        )
+
+    def calculate_rolling_resistance_n(self, velocity_ms: float) -> float:
+        """calculate rolling resistance in newton based on velocity in meter per second
+
+        Args:
+            velocity_ms (float): velocity in meter per second
+        Returns:
+            float: rolling resistance in newton
+        """
+        return (
+            self.car_configs.vehicleweight_kg
+            * self.car_configs.tire_fr
+            * GRAVITY_MS
+            * math.copysign(1, velocity_ms)
+        )
+
+    def calculate_engine_speed(self, velocity_ms: float) -> float:
+        """calculate engine speed in newton based on velocity in meter per second
+
+        Args:
+            velocity_ms (float): velocity in meter per second
+        Returns:
+            float: engine speed in newton
+        """
+        return velocity_ms / self._engine_speed_factor
+
+    def calculate_velocity(
+        self, old_velocity_ms: float, acceleration: float, time_step: float
+    ) -> float:
+        """calculate new velocity based on old velocity and acceleration as well as time step
+
+        Args:
+            old_velocity_ms (float): old velocity in meter per second
+            acceleration (float): acceleration in meter per second^2
+            time_step (float): time step to use acceleration on old velocity
+        Returns:
+            float: new velocity in meter per second
+        """
+        return old_velocity_ms + time_step * acceleration
+
+    def get_engine_torque_from_speed_in_Nm(
+        self, engine_speed: float, throttle: float
+    ) -> float:
+        """calculate torque in Newton meter from engine speed
+
+        Args:
+            speed (float): Engine speed in W
+        Returns:
+            float: engine torque in Newton meter
+        """
+        if engine_speed < 0:
+            engine_torque = 0
+        elif (engine_speed >= 0) and (
+            engine_speed < self.car_configs.engine_n_max_power
+        ):
+            engine_torque = (
+                throttle
+                / 100
+                * self.car_configs.engine_power_w
+                / self.car_configs.engine_n_max_power
+                * 60
+                / 2
+                / math.pi
+            )
+        elif (engine_speed > self.car_configs.engine_n_max_power) and (
+            engine_speed < self.car_configs.engine_n_max
+        ):
+            engine_torque = (
+                throttle
+                / 100
+                * self.car_configs.engine_power_w
+                / engine_speed
+                * 60
+                / 2
+                / math.pi
+            )
+        elif engine_speed > self.car_configs.engine_n_max:
+            engine_torque = 0
+        return engine_torque
 
 
 class TrajectoryType(StrEnum):
