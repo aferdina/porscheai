@@ -161,6 +161,33 @@ class PhysicConfigs:
             engine_torque = 0
         return engine_torque
 
+    def get_car_acceleration(
+        self,
+        brake: float,
+        air_resistance: float,
+        rolling_resistance: float,
+        engine_force: float,
+    ) -> float:
+        return (
+            (engine_force - rolling_resistance - air_resistance)
+            / self.car_configs.vehicleweight_kg
+        ) - min(self.brake_bounds[1], brake)
+
+    def get_engine_force(self, engine_torque_nm: float) -> float:
+        """get engine force from engine torque
+
+        Args:
+            engine_torque_nm (float): engine torque in Newton meter
+
+        Returns:
+            float: engine force in Newton
+        """
+        return (
+            engine_torque_nm
+            * self.car_configs.gearbox_ratio
+            / self.car_configs.tire_radius
+        )
+
 
 class TrajectoryType(StrEnum):
     """different types for creating trajectory"""

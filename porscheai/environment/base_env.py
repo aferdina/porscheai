@@ -1,6 +1,7 @@
 """ base environment for driver gym environment
 """
 from typing import Any, Dict, Tuple, Callable
+from dataclasses import dataclass
 import gymnasium as gym
 from gymnasium.spaces import Dict, Box
 import numpy as np
@@ -16,6 +17,13 @@ from .helpclasses import (
 genral_game_configs = GeneralGameconfigs()
 trajectory_configs = ReferenceTrajectory()
 physic_configs = PhysicConfigs()
+
+
+@dataclass
+class DriverPhysicsParameter:
+    velocity_ms: float = 0.0
+    brake: float = 0.0
+    throttle: float = 0.0
 
 
 class SimpleDriver(gym.Env):
@@ -217,7 +225,6 @@ class SimpleDriver(gym.Env):
 
         # update time step
         self.current_time_step += 1
-
         # Check if Round is done
         if self.current_time_step == self.total_no_timesteps:
             done = True
@@ -234,20 +241,7 @@ class SimpleDriver(gym.Env):
             self.vehicle_distance + self.time_step_size_s * vehicle_velocity_ms
         )
 
-    def _Car(self, throttle, brake) -> None:
-        # parameters for the car
-        vehicle_weight = 2500  # kg
-        engine_power = 400000  # W
-        engine_n_max_power = 6000  # upm
-        engine_n_max = 22000  # upm
-        gearbox_ratio = 8  # -
-        tire_radius = 0.3  # m
-        rho_air = 1.2  # kg/m³
-        vehicle_cW = 0.25  # -
-        vehicle_A = 2.2  # m²
-        tire_fR = 0.01  # -
-        g = 9.81  # m/s²
-
+    def _update_speed(self, throttle, brake) -> None:
         # Air & Rolling Resistance in Newton
         air_resistance = self.physics.calculate_air_resistance_n(
             velocity_ms=self.v_Car_ms
@@ -262,14 +256,16 @@ class SimpleDriver(gym.Env):
             engine_speed=engine_speed, throttle=throttle
         )
 
-        F_Prop = engine_torque * gearbox_ratio / tire_radius
+        engine_force = self.physics.get_engine_force(engine_torque_nm=engine_torque)
 
-        # Newton
-        out_acceleration = ((F_Prop - F_RR - F_AirR) / vehicle_weight) - min(
-            self.Bremse_S_max, brake
+        out_acceleration = self.physics(
+            brake=brake,
+            air_resistance=air_resistance,
+            rolling_resistance=rolling_resistance,
+            engine_force=engine_force,
         )
         if (self.v_Car_ms <= 0.1) and (out_acceleration < 0):
-            out_acceleration = 0
+            out_acceleration = 0.0
 
         self.v_Car_ms = self.physics.calculate_velocity(
             old_velocity_ms=self.v_Car_ms,
