@@ -11,7 +11,11 @@ gymnasium = "0.28.1"
 scipy = "^1.11.1"
 stable-baselines3 = "^2.0.0"
 tensorboard = "^2.14.0"
+strenum = "^0.4.15"
 
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.25.1"
 
 [build-system]
 requires = ["poetry-core"]
