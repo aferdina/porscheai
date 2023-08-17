@@ -41,6 +41,9 @@ class SimpleDriver(gym.Env):
         # Initalization for Integration
         self.vehicle_distance_m: float = 0.0  # distance of vehicle from starting point
 
+        # reward configs
+        self.reward_scaling = game_configs.rewardscale
+
         self.velocity_kmh_normalisation = self._get_velocity_kmh_normalisation(
             traj_config=traj_configs, general_config=genral_game_configs
         )
@@ -208,7 +211,7 @@ class SimpleDriver(gym.Env):
 
         # Calculate Reward
         reward = -(np.abs(v_Car_norm - v_target_norm[0]).astype(float))
-        reward = reward * REWARDSCALE
+        reward = reward * self.reward_scaling
 
         self.current_time_step += 1
 
