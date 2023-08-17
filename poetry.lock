@@ -1664,6 +1664,20 @@ files = [
 pyasn1 = ">=0.1.3"
 
 [[package]]
+name = "sb3-contrib"
+version = "2.0.0"
+description = "Contrib package of Stable Baselines3, experimental code."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "sb3_contrib-2.0.0-py3-none-any.whl", hash = "sha256:0b4b7229dd18af4ebec8a9ee0da7a4d55f037215d16489a09461570df78ff0a7"},
+    {file = "sb3_contrib-2.0.0.tar.gz", hash = "sha256:cb614765d2e8b7b7c299b80f9b21121724ba712c0c9d3b543f963f1ff368aaa5"},
+]
+
+[package.dependencies]
+stable-baselines3 = ">=2.0.0"
+
+[[package]]
 name = "scipy"
 version = "1.11.1"
 description = "Fundamental algorithms for scientific computing in Python"
@@ -1993,4 +2007,4 @@ test = ["pytest (>=6.0.0)", "setuptools (>=65)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.4"
-content-hash = "3fa28d6dab2fe6a051783bbdf27b9581f0f59039e3a7071ab426aa6fa2687340"
+content-hash = "4a18a515e50550c68511e74b74288d2cd581a620ac57708f070ed856ede6720b"
