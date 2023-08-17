@@ -50,10 +50,18 @@ class PhysicConfigs:
 
     def __post_init__(self):
         self._air_resistance_factor = (
-            1 / 2 * RHO_AIR_KGM3 * self.vehicle_w * self.vehicle_a
+            1
+            / 2
+            * RHO_AIR_KGM3
+            * self.car_configs.vehicle_w
+            * self.car_configs.vehicle_a
         )
         self._engine_speed_factor = (
-            self.tire_radius / 2 / math.pi * 60 * self.gearbox_ratio
+            self.car_configs.tire_radius
+            / 2
+            / math.pi
+            * 60
+            * self.car_configs.gearbox_ratio
         )
 
     def calculate_air_resistance_n(self, velocity_ms: float) -> float:
