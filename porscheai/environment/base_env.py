@@ -1,16 +1,20 @@
 """ base environment for driver gym environment
 """
-from dataclasses import dataclass
-from typing import List, Tuple
-from strenum import StrEnum
+from typing import Any, Dict, Tuple, Callable
 import gymnasium as gym
-from gymnasium.spaces import Dict, Box, MultiDiscrete
+from gymnasium.spaces import Dict, Box
 import numpy as np
 import math
-from .helpclasses import GeneralGameconfigs, ReferenceTrajectoryConfigs, PhysicConfigs
+from .helpclasses import (
+    GeneralGameconfigs,
+    ReferenceTrajectory,
+    PhysicConfigs,
+    create_reference_trajecotry,
+    FACTOR_KMH_MS,
+)
 
 genral_game_configs = GeneralGameconfigs()
-trajectory_configs = ReferenceTrajectoryConfigs()
+trajectory_configs = ReferenceTrajectory()
 physic_configs = PhysicConfigs()
 
 
@@ -20,7 +24,7 @@ class SimpleDriver(gym.Env):
     def __init__(
         self,
         game_configs: GeneralGameconfigs = genral_game_configs,
-        trajectory_configs: ReferenceTrajectoryConfigs = trajectory_configs,
+        traj_configs: ReferenceTrajectory = trajectory_configs,
         physic_configs: PhysicConfigs = physic_configs,
     ):
         """
@@ -31,44 +35,46 @@ class SimpleDriver(gym.Env):
             physic_configs (PhysicConfigs, optional): _description_. Defaults to physic_configs.
         """
 
-        # Initializations
-        self.ref_secs = ref_secs
-        self.ref_speeds = ref_speeds
-        self.len_outlook = len_outlook
-
-        # Normalization Bounds
-
+        # adding information from configs
+        self.total_no_timesteps: int = traj_configs.total_timesteps
+        self.outlook_length: int = game_configs.outlook_length
         # Initalization for Integration
-        self.sim_stepsize = 0.01  # s
-        self.vehicle_distance = 0  # m
-        if v_Car_Init is None:
-            self.v_Car_ms = self.ref_speeds[0] / 3.6
-        else:
-            self.v_Car_ms = v_Car_Init / 3.6
+        self.vehicle_distance_m: float = 0.0  # distance of vehicle from starting point
 
-        # Episode Length
-        self.dtype = np.float32
-        self.sim_duration = ref_secs[-1]
-        self.episode_length = int(self.sim_duration / self.sim_stepsize)
-
-        # load target velocities
-        self.v_Soll_all = self._load_ref_trajectory()
-
-        # Gym setup
-        num_obs = self.len_outlook + 1
-        self.observation_space = Box(
-            low=np.repeat(self.min_norm_obs, num_obs),
-            high=np.repeat(self.max_norm_obs, num_obs),
-            shape=(num_obs,),
-            dtype=self.dtype,
+        self.velocity_kmh_normalisation = self._get_velocity_kmh_normalisation(
+            traj_config=traj_configs, general_config=genral_game_configs
+        )
+        # init start velocity
+        _start_velocity_ms = physic_configs.car_configs.start_velocity_ms
+        self.velocity_car_ms: float = (
+            _start_velocity_ms
+            if _start_velocity_ms is not None
+            else traj_configs.velocities_kmh[0] / FACTOR_KMH_MS
         )
 
-        # inputs: [DK_SOLL, Bremse], _normalized to [-1,1]
+        self.target_velocity_traj_kmh = create_reference_trajecotry(
+            reference_traj_conf=traj_configs
+        )
+        self.target_velocity_traj_kmh_normalized = self.velocity_kmh_normalisation(
+            self.target_velocity_traj_kmh.copy()
+        )
+        # Gym setup
+        # current state space consist of future target velocities and current deviation
+        obs_space_length: int = game_configs.outlook_length + 1
+        self.observation_space = Box(
+            low=np.repeat(game_configs.obs_bounds[0], obs_space_length),
+            high=np.repeat(game_configs.obs_bounds[1], obs_space_length),
+            shape=(obs_space_length,),
+            dtype=np.float32,
+        )
+
+        # adapt to multiple types of action spaces
+        action_space_length: int = 1
         self.action_space = Box(
-            low=np.repeat(self.min_norm_act, num_act),
-            high=np.repeat(self.max_norm_act, num_act),
-            shape=(num_act,),
-            dtype=self.dtype,
+            low=np.repeat(game_configs.action_space_bounds[0], action_space_length),
+            high=np.repeat(game_configs.action_space_bounds[1], action_space_length),
+            shape=(action_space_length,),
+            dtype=np.float32,
         )
 
         # Add the first State
@@ -79,7 +85,7 @@ class SimpleDriver(gym.Env):
             min_norm=-1,
             max_norm=1,
         )
-        v_target = self.v_Soll_all[: self.len_outlook]
+        v_target = self.target_velocity_traj_kmh[: self.outlook_length]
         v_target_norm = self._normalize_2(
             value=v_target,
             min_val=self.v_Car_min,
@@ -93,8 +99,41 @@ class SimpleDriver(gym.Env):
         self.first_state = np.append(v_Car_norm, deviation)
         self.state = self.first_state
 
-        self.current_iteration = 0
-        self.info = {}
+        self.current_time_step: int = 0
+        self.info: Dict[str, Any] = {}
+
+    def velocity_kmh_normalisation(value: float | np.ndarray) -> float | np.ndarray:
+        """create normalized value for velocity based on configurations
+
+        Args:
+            value (float | np.ndarray): _description_
+
+        Returns:
+            float | np.ndarray: _description_
+        """
+        return value
+
+    def _get_velocity_kmh_normalisation(
+        self, traj_config: ReferenceTrajectory, general_config: GeneralGameconfigs
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """create normalisation function based on configurations
+
+        Args:
+            traj_config (ReferenceTrajectory): trajectory configurations
+            general_config (GeneralGameconfigs): general game configurations
+
+        Returns:
+            Callable[[float | np.ndarray], float | np.ndarray]: function to normalise values
+        """
+        x_range = traj_config.velocity_bounds[1] - traj_config.velocity_bounds[0]
+        y_range = general_config.obs_bounds[1] - general_config.obs_bounds[0]
+
+        def _dummy_normalisation(value: float | np.ndarray) -> float | np.ndarray:
+            return (
+                value - traj_config.velocity_bounds[0]
+            ) * y_range / x_range + general_config.obs_bounds[0]
+
+        return _dummy_normalisation
 
     def _reshape_to_length_n(self, array: np.array, length: int) -> np.array:
         """
@@ -104,24 +143,15 @@ class SimpleDriver(gym.Env):
         array = np.append(array, np.repeat(array[-1], length - len_array))
         return array
 
-    def _load_ref_trajectory(self) -> np.array:
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
+        """doing one step in car simulation environment
+
+        Args:
+            action (np.ndarray): action to be performed
+
+        Returns:
+            Tuple[np.ndarray, float, bool, Dict]: next state, reward, bool if done, bool if truncated, info if done
         """
-        Loads a reference trajectory. See the notebook make_ref_trajectory for an example.
-        """
-        ref_trajectory = np.array([])
-
-        for idx in range(len(self.ref_secs) - 1):
-            sect_dur = self.ref_secs[idx + 1] - self.ref_secs[idx]
-            curr_speed = self.ref_speeds[idx]
-            next_speed = self.ref_speeds[idx + 1]
-            num_steps = int(self.episode_length * sect_dur / self.sim_duration)
-
-            section = np.linspace(curr_speed, next_speed, num_steps)
-            ref_trajectory = np.append(ref_trajectory, section)
-
-        return ref_trajectory
-
-    def step(self, action):
         done = False
 
         # unnormalize the actions
@@ -154,10 +184,10 @@ class SimpleDriver(gym.Env):
 
         # Get traget speed vector, normalize and calculate deviation
         len_outlook_iteration = np.min(
-            [self.episode_length - self.current_iteration, self.len_outlook]
+            [self.episode_length - self.current_time_step, self.len_outlook]
         )  # get future reference trajectory, shorted if we are at end of episode
         v_target = self.v_Soll_all[
-            self.current_iteration : (self.current_iteration + len_outlook_iteration)
+            self.current_time_step : (self.current_time_step + len_outlook_iteration)
         ]
         if len(v_target) != self.len_outlook:
             v_target = self._reshape_to_length_n(
@@ -180,13 +210,13 @@ class SimpleDriver(gym.Env):
         reward = -(np.abs(v_Car_norm - v_target_norm[0]).astype(float))
         reward = reward * REWARDSCALE
 
-        self.current_iteration += 1
+        self.current_time_step += 1
 
         # Check if Round is done
-        if self.current_iteration == self.episode_length:
+        if self.current_time_step == self.total_no_timesteps:
             done = True
 
-        return obs, reward, done, self.info
+        return obs, reward, done, False, self.info
 
     def _Car(self, throttle, brake) -> None:
         # parameters for the car
@@ -245,31 +275,6 @@ class SimpleDriver(gym.Env):
             self.vehicle_distance + self.sim_stepsize * self.v_Car_ms
         )
 
-    def _normalize_2(
-        self,
-        value: float,
-        min_val: float,
-        max_val: float,
-        min_norm: float,
-        max_norm: float,
-    ) -> float:
-        """
-        normalizes a value to the [min_norm, max_norm] range
-        Inverse of _normalize function
-
-        Args:
-        - value: the value to un_normalize
-        - min_val: the minimum value in the allowed range of the value
-        - max_val: the maximum value in the allowed range of the value
-        - min_norm: lower boundary of the normalization range
-        - max_norm: upper boundary of the normalization range
-        """
-        val_norm = (value - min_val) * (max_norm - min_norm) / (
-            max_val - min_val
-        ) + min_norm
-
-        return val_norm
-
     def _un_normalize_2(
         self,
         value: float,
@@ -298,6 +303,6 @@ class SimpleDriver(gym.Env):
     def reset(self):
         # Reset Environment
         self.state = self.first_state
-        self.current_iteration = 0
+        self.current_time_step = 0
 
         return self.state
