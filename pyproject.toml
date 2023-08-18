@@ -17,6 +17,9 @@ sb3-contrib = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.25.1"
+pytest = "^7.4.0"
+pylint = "^2.17.5"
+ruff = "^0.0.285"
 
 [build-system]
 requires = ["poetry-core"]

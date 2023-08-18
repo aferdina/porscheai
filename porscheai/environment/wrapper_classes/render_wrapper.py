@@ -107,7 +107,6 @@ class SimpleDriver(gym.Env):
         )
         return start_velocity_ms
 
-    # pylint: disable=E0202
     def velocity_ms_normalisation(
         self, value: float | np.ndarray, unnorm: bool = False
     ) -> float | np.ndarray:
@@ -208,9 +207,8 @@ class SimpleDriver(gym.Env):
 
         self.game_physics_params.velocity_ms = new_velocity
 
-        # game specifics for observation space and actions
         done = False
-
+        # TODO: update game state
         # normalize current speed
         _normalized_velocity = self.velocity_ms_normalisation(new_velocity)
 
@@ -256,6 +254,7 @@ class SimpleDriver(gym.Env):
         """
         return trajectory
 
+
     def reset(
         self,
         *,
@@ -273,6 +272,7 @@ class SimpleDriver(gym.Env):
         """
         super().reset(seed=seed, options=options)
         self.current_time_step = 0
+        self.vehicle_distance_m = 0.0
         return self.step(action=None)[0], {}
 
     def render(self, mode="human"):
