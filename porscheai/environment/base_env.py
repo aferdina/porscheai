@@ -208,6 +208,7 @@ class SimpleDriver(gym.Env):
 
         self.game_physics_params.velocity_ms = new_velocity
 
+        # game specifics for observation space and actions
         done = False
 
         # normalize current speed
