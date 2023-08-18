@@ -19,8 +19,11 @@ TRAJ_Y_LABEL = "Speed (km/h)"
 PLOT_TITLE = "Reference Trajectory"
 
 
+# TODO: clean up car configs
 @dataclass
 class CarConfigs:
+    """config class to store car configurations"""
+
     start_velocity_kmh: float | None = None  # starting velocity in km/h
     start_velocity_ms: float | None = None  # starting velocity in m/s
     vehicleweight_kg: int = 2500  # weight of vehicle in kg
@@ -44,7 +47,7 @@ class PhysicConfigs:
 
     throttle_bounds: Tuple[float, float] = (0.0, 100.0)  # bounds for throttle values
     brake_bounds: Tuple[float, float] = (0.0, 10.0)  # bounds for brake
-    car_configs: CarConfigs = field(default=lambda: CarConfigs())
+    car_configs: CarConfigs = field(default_factory=lambda: CarConfigs)
     _air_resistance_factor: float | None = None
     _engine_speed_factor: float | None = None
 
@@ -121,7 +124,7 @@ class PhysicConfigs:
         """
         return old_velocity_ms + time_step * acceleration
 
-    def get_engine_torque_from_speed_in_Nm(
+    def get_engine_torque_from_speed_in_nm(
         self, engine_speed: float, throttle: float
     ) -> float:
         """calculate torque in Newton meter from engine speed
@@ -133,9 +136,7 @@ class PhysicConfigs:
         """
         if engine_speed < 0:
             engine_torque = 0
-        elif (engine_speed >= 0) and (
-            engine_speed < self.car_configs.engine_n_max_power
-        ):
+        elif 0 <= engine_speed < self.car_configs.engine_n_max_power:
             engine_torque = (
                 throttle
                 / 100
@@ -145,8 +146,10 @@ class PhysicConfigs:
                 / 2
                 / math.pi
             )
-        elif (engine_speed > self.car_configs.engine_n_max_power) and (
-            engine_speed < self.car_configs.engine_n_max
+        elif (
+            self.car_configs.engine_n_max
+            > engine_speed
+            > self.car_configs.engine_n_max_power
         ):
             engine_torque = (
                 throttle
@@ -168,6 +171,17 @@ class PhysicConfigs:
         rolling_resistance: float,
         engine_force: float,
     ) -> float:
+        """calculate car acceleration based on given parameters
+
+        Args:
+            brake (float): value of brake
+            air_resistance (float): air resistance force
+            rolling_resistance (float): rolling resistance force
+            engine_force (float): force of engine
+
+        Returns:
+            float: acceleration in meter pers second per second
+        """
         return (
             (engine_force - rolling_resistance - air_resistance)
             / self.car_configs.vehicleweight_kg
@@ -188,6 +202,50 @@ class PhysicConfigs:
             / self.car_configs.tire_radius
         )
 
+    def get_velocity(
+        self, throttle: float, brake: float, velocity_ms: float, time_step_s: float
+    ) -> float:
+        """calculate speed given throttle, brake and current velocity
+
+        Args:
+            throttle (float): value for throttle
+            brake (float): value for brake
+            velocity_ms (float): velocity in meter per seconds
+            time_step_s (float): time step in seconds
+
+        Returns:
+            float: return velocity in meter per seconds
+        """
+        # Air & Rolling Resistance in Newton
+        air_resistance = self.calculate_air_resistance_n(velocity_ms=velocity_ms)
+        rolling_resistance = self.calculate_rolling_resistance_n(
+            velocity_ms=velocity_ms
+        )
+
+        # Propulsion
+        engine_speed = self.calculate_engine_speed(velocity_ms=velocity_ms)
+        engine_torque = self.get_engine_torque_from_speed_in_nm(
+            engine_speed=engine_speed, throttle=throttle
+        )
+
+        engine_force = self.get_engine_force(engine_torque_nm=engine_torque)
+
+        out_acceleration = self.get_car_acceleration(
+            brake=brake,
+            air_resistance=air_resistance,
+            rolling_resistance=rolling_resistance,
+            engine_force=engine_force,
+        )
+        if (velocity_ms <= 0.1) and (out_acceleration < 0):
+            out_acceleration = 0.0
+
+        velocity_ms = self.calculate_velocity(
+            old_velocity_ms=velocity_ms,
+            acceleration=out_acceleration,
+            time_step=time_step_s,
+        )
+        return velocity_ms
+
 
 class TrajectoryType(StrEnum):
     """different types for creating trajectory"""
@@ -195,6 +253,7 @@ class TrajectoryType(StrEnum):
     LINEAR_INTERPOLATION = "linear_interpolation"
 
 
+# pylint: disable=R0902
 @dataclass
 class ReferenceTrajectory:
     """stores information about a reference trajectory for driving the vehicle"""
