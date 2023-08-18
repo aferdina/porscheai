@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import gymnasium as gym
 from gymnasium.spaces import Box
 import numpy as np
-from .helpclasses import (
+from porscheai.environment.configs import (
     GeneralGameconfigs,
     ReferenceTrajectory,
     PhysicConfigs,
