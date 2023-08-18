@@ -9,7 +9,7 @@ from .helpclasses import (
     GeneralGameconfigs,
     ReferenceTrajectory,
     PhysicConfigs,
-    create_reference_trajecotry,
+    create_reference_trajecotry_ms,
     FACTOR_KMH_MS,
 )
 
@@ -56,7 +56,7 @@ class SimpleDriver(gym.Env):
         # reward configs
         self.reward_scaling = game_configs.rewardscale
 
-        self.velocity_kmh_normalisation = self._get_velocity_kmh_normalisation(
+        self.velocity_kmh_normalisation = self._get_velocity_ms_normalisation(
             traj_config=traj_configs, general_config=genral_game_configs
         )
         # init start velocity
@@ -70,12 +70,10 @@ class SimpleDriver(gym.Env):
             velocity_ms=start_velocity_ms
         )
 
-        self.target_velocity_traj_kmh = create_reference_trajecotry(
+        self.target_velocity_traj_ms = create_reference_trajecotry_ms(
             reference_traj_conf=traj_configs
         )
-        self.target_velocity_traj_kmh_normalized = self.velocity_kmh_normalisation(
-            self.target_velocity_traj_kmh.copy()
-        )
+        
         # Gym setup
         # current state space consist of future target velocities and current deviation
         obs_space_length: int = game_configs.outlook_length + 1
@@ -95,14 +93,10 @@ class SimpleDriver(gym.Env):
             dtype=np.float32,
         )
 
-        # Add the first State
-        v_Car_norm = self._normalize_2(
-            value=self.v_Car_ms * 3.6,
-            min_val=self.v_Car_min,
-            max_val=self.v_Car_max,
-            min_norm=-1,
-            max_norm=1,
+        self.target_velocity_traj_ms_normalized = self.velocity_ms_normalisation(
+            self.target_velocity_traj_ms.copy()
         )
+        # get normalized velocity for complete trajectory
         v_target = self.target_velocity_traj_kmh[: self.outlook_length]
         v_target_norm = self._normalize_2(
             value=v_target,
@@ -121,20 +115,20 @@ class SimpleDriver(gym.Env):
         self.current_time_step: int = 0
         self.info: Dict[str, Any] = {}
 
-    def velocity_kmh_normalisation(
+    def velocity_ms_normalisation(
         self, value: float | np.ndarray
     ) -> float | np.ndarray:
         """create normalized value for velocity based on configurations
 
         Args:
-            value (float | np.ndarray): _description_
+            value (float | np.ndarray): velocity in m/s to be normalized
 
         Returns:
-            float | np.ndarray: _description_
+            float | np.ndarray: normalized velocity for environment
         """
         return value
 
-    def _get_velocity_kmh_normalisation(
+    def _get_velocity_ms_normalisation(
         self, traj_config: ReferenceTrajectory, general_config: GeneralGameconfigs
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """create normalisation function based on configurations
@@ -146,13 +140,15 @@ class SimpleDriver(gym.Env):
         Returns:
             Callable[[float | np.ndarray], float | np.ndarray]: function to normalise values
         """
-        x_range = traj_config.velocity_bounds[1] - traj_config.velocity_bounds[0]
+        # lower velocity bound should be equal to zero
+        x_range = (
+            traj_config.velocity_bounds_ms[1]
+            + general_config.velocity_ms_addition_upper_bound
+        )
         y_range = general_config.obs_bounds[1] - general_config.obs_bounds[0]
 
         def _dummy_normalisation(value: float | np.ndarray) -> float | np.ndarray:
-            return (
-                value - traj_config.velocity_bounds[0]
-            ) * y_range / x_range + general_config.obs_bounds[0]
+            return (value) * y_range / x_range + general_config.obs_bounds[0]
 
         return _dummy_normalisation
 
@@ -207,17 +203,9 @@ class SimpleDriver(gym.Env):
             time_step_s=self.time_step_size_s,
         )
 
-        # TODO: add new velocity to game
-
         # TODO: update game state
         # Get current speed and normalize
-        v_Car_norm = self._normalize_2(
-            value=self.v_Car_kmh,
-            min_val=self.v_Car_min,
-            max_val=self.v_Car_max,
-            min_norm=-1,
-            max_norm=1,
-        )
+        _normalized_velocity = self.velocity_ms_normalisation(_new_velocity)
 
         # Get traget speed vector, normalize and calculate deviation
         len_outlook_iteration = np.min(
@@ -297,3 +285,6 @@ class SimpleDriver(gym.Env):
         self.vehicle_distance_m = 0.0
 
         return self.state
+
+    def render(self, mode="human"):
+        pass

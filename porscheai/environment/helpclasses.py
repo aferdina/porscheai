@@ -265,8 +265,10 @@ class ReferenceTrajectory:
         [0.0, 10.0, 20.0, 15.0, 20.0, 15.0], dtype=np.float32
     )
     simulation_frequency_s: float = 0.01  # frequency of simulation time points in ms
+    velocities_ms: np.ndarray | None = None
     traj_type: TrajectoryType = TrajectoryType.LINEAR_INTERPOLATION
-    velocity_bounds: Tuple[float, float] | None = None
+    velocity_bounds_kmh: Tuple[float, float] | None = None
+    velocity_bounds_ms: Tuple[float, float] | None = None
     last_time_step: float | None = None
     first_time_step: float | None = None
     total_duration: float | None = None
@@ -282,21 +284,25 @@ class ReferenceTrajectory:
         assert is_stricly_increasing(
             self.seconds_markers_s
         ), "second marker must increasing"
+        self.velocities_ms = self.velocities_kmh / FACTOR_KMH_MS
         self.velocity_bounds_kmh = (min(self.velocities_kmh), max(self.velocities_kmh))
+        self.velocity_bounds_ms = self.velocity_bounds_kmh / FACTOR_KMH_MS
         self.last_time_step = np.max(self.seconds_markers_s)
         self.first_time_step = np.min(self.seconds_markers_s)
         self.total_duration = self.last_time_step - self.first_time_step
         self.total_timesteps = int(self.total_duration / self.simulation_frequency_s)
 
 
-def create_reference_trajecotry(reference_traj_conf: ReferenceTrajectory) -> np.ndarray:
-    """create complete trajectory from configs
+def create_reference_trajecotry_ms(
+    reference_traj_conf: ReferenceTrajectory,
+) -> np.ndarray:
+    """create complete velocitiy trajectory from configs in ms
 
     Args:
         reference_traj_conf (ReferenceTrajectoryConfigs): configs to read data from
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: velocity trajectory in ms
     """
     if reference_traj_conf.traj_type == TrajectoryType.LINEAR_INTERPOLATION:
         return np.interp(
@@ -307,7 +313,7 @@ def create_reference_trajecotry(reference_traj_conf: ReferenceTrajectory) -> np.
                 endpoint=True,
             ),
             reference_traj_conf.seconds_markers_s,
-            reference_traj_conf.velocities_kmh,
+            reference_traj_conf.velocities_ms,
         )
     raise ValueError("Trajectory type is unknown")
 
@@ -322,6 +328,9 @@ class GeneralGameconfigs:
     obs_bounds: Tuple[float, float] = (-1.0, 1.0)  # bounds for observation space
     action_space_bounds: Tuple[float] = (-1.0, 1.0)  # bounds for action space
     outlook_length: int = 1  # number of timesteps to look in the future
+    velocity_ms_addition_upper_bound: float = (
+        20.0  # upper bound for possible velocities
+    )
 
 
 def plot_reference_trajectory(
@@ -356,7 +365,7 @@ __all__ = [
     GeneralGameconfigs.__name__,
     ReferenceTrajectory.__name__,
     PhysicConfigs.__name__,
-    create_reference_trajecotry.__name__,
+    create_reference_trajecotry_ms.__name__,
 ]
 
 
