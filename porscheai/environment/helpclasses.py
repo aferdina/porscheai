@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Tuple
 import math
+import gymnasium as gym
+from gymnasium.spaces import Box
 from strenum import StrEnum
 import numpy as np
 import matplotlib.pyplot as plt
@@ -333,6 +335,28 @@ class GeneralGameconfigs:
     )
 
 
+class ObservationSpaceType(StrEnum):
+    OUTLOOK = "outlook"
+@dataclass
+class ObservationSpaceConfigs:
+    obs_type: ObservationSpaceType = ObservationSpaceType.OUTLOOK
+
+    def create_action_space(self, game_configs: GeneralGameconfigs) -> gym.Space:
+        """create action space
+
+        Args:
+            game_configs (GeneralGameconfigs): game configs
+
+        Returns:
+            gym.Space: action space
+        """
+        return Box(
+            low=game_configs.action_space_bounds[0],
+            high=game_configs.action_space_bounds[1],
+            shape=(1,),
+            dtype=np.float32,
+        )
+
 def plot_reference_trajectory(
     traj_configs: ReferenceTrajectory, save_path: str | None = None
 ) -> None:
@@ -343,7 +367,7 @@ def plot_reference_trajectory(
         save_path (str| None): path to save trajectory, if None trajectory is not saved.
         Defaults to None
     """
-    time_array = create_reference_trajecotry(
+    time_array = create_reference_trajecotry_ms(
         reference_traj_conf=traj_configs,
     )
     x_ticks = np.linspace(
