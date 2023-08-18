@@ -1,27 +1,26 @@
 """ base environment for driver gym environment
 """
 from typing import Any, Dict, Tuple, Callable
-from dataclasses import dataclass
 import gymnasium as gym
-from gymnasium.spaces import Box
 import numpy as np
 from porscheai.environment.configs import (
     GeneralGameconfigs,
     ReferenceTrajectory,
     PhysicConfigs,
     create_reference_trajecotry_ms,
+    DriverPhysicsParameter,
+    ObservationSpaceConfigs,
+    ActionSpaceConfigs,
 )
+from porscheai.environment.observation_spaces import OutlookObservationSpace
+from porscheai.environment.action_spaces import OneForBrakeAndGearActionSpace
+
 
 df_general_game_configs = GeneralGameconfigs()
 df_trajectory_configs = ReferenceTrajectory()
 df_physic_configs = PhysicConfigs()
-
-
-@dataclass
-class DriverPhysicsParameter:
-    """dataclass to store relevant game physics during the game"""
-
-    velocity_ms: float = 0.0
+df_observations_sapce_configs = OutlookObservationSpace()
+df_action_space_configs = OneForBrakeAndGearActionSpace()
 
 
 class SimpleDriver(gym.Env):
@@ -32,6 +31,8 @@ class SimpleDriver(gym.Env):
         game_configs: GeneralGameconfigs = df_general_game_configs,
         traj_configs: ReferenceTrajectory = df_trajectory_configs,
         physic_configs: PhysicConfigs = df_physic_configs,
+        observation_space_configs: ObservationSpaceConfigs = df_observations_sapce_configs,
+        action_space_configs: ActionSpaceConfigs = df_action_space_configs,
     ):
         """
 
@@ -51,19 +52,11 @@ class SimpleDriver(gym.Env):
         self.start_velocity_ms: float = self.get_start_velocity_ms(
             traj_conifgs=traj_configs
         )
-        self.velocity_ms_normalisation = self._get_velocity_ms_normalisation(
-            traj_config=traj_configs, general_config=game_configs
-        )
-        _target_velocity_traj_ms = create_reference_trajecotry_ms(
-            reference_traj_conf=traj_configs
-        )
-        self.target_velocity_traj_ms_normalized = self.velocity_ms_normalisation(
-            _target_velocity_traj_ms.copy()
-        )
+
         self.current_time_step: int = 0
         # observation space dependent information
-        self.outlook_length: int = game_configs.outlook_length
 
+        # Outsource to reward configs afterwards
         # reward configs
         self.reward_scaling = game_configs.rewardscale
 
@@ -73,22 +66,24 @@ class SimpleDriver(gym.Env):
 
         # Gym setup
         # current state space consist of future target velocities and current deviation
-        _obs_space_length: int = game_configs.outlook_length + 1
-        self.observation_space = Box(
-            low=np.repeat(game_configs.obs_bounds[0], _obs_space_length),
-            high=np.repeat(game_configs.obs_bounds[1], _obs_space_length),
-            shape=(_obs_space_length,),
-            dtype=np.float32,
-        )
-
+        self.observation_space = observation_space_configs.create_observation_space()
+        self.get_observation = observation_space_configs.get_observation
+        self.get_reward = observation_space_configs.get_reward
         # adapt to multiple types of action spaces
-        _action_space_length: int = 1
-        self.action_space = Box(
-            low=np.repeat(game_configs.action_space_bounds[0], _action_space_length),
-            high=np.repeat(game_configs.action_space_bounds[1], _action_space_length),
-            shape=(_action_space_length,),
-            dtype=np.float32,
-        )
+        self.action_space = action_space_configs.create_action_space()
+
+    def get_observation(
+        self, driver_physics_params: DriverPhysicsParameter
+    ) -> np.ndarray:
+        """get observation
+
+        Args:
+            driver_physics_params (DriverPhysicsParameter): physics parameters of the driver
+
+        Returns:
+            np.ndarray: observation
+        """
+        return np.empty()
 
     def get_start_velocity_ms(self, traj_conifgs: ReferenceTrajectory) -> float:
         """get start velocity of car based on configurations
@@ -106,50 +101,6 @@ class SimpleDriver(gym.Env):
             else traj_conifgs.velocities_ms[0]
         )
         return start_velocity_ms
-
-    # pylint: disable=E0202
-    def velocity_ms_normalisation(
-        self, value: float | np.ndarray, unnorm: bool = False
-    ) -> float | np.ndarray:
-        """create normalized value for velocity based on configurations
-
-        Args:
-            value (float | np.ndarray): velocity in m/s to be normalized
-
-        Returns:
-            float | np.ndarray: normalized velocity for environment
-        """
-        if not unnorm:
-            return value
-        return -value
-
-    def _get_velocity_ms_normalisation(
-        self, traj_config: ReferenceTrajectory, general_config: GeneralGameconfigs
-    ) -> Callable[[float | np.ndarray, bool], float | np.ndarray]:
-        """create normalisation function based on configurations
-
-        Args:
-            traj_config (ReferenceTrajectory): trajectory configurations
-            general_config (GeneralGameconfigs): general game configurations
-
-        Returns:
-            Callable[[float | np.ndarray], float | np.ndarray]: function to normalise values
-        """
-        # lower velocity bound should be equal to zero
-        x_range = (
-            traj_config.velocity_bounds_ms[1]
-            + general_config.velocity_ms_addition_upper_bound
-        )
-        y_range = general_config.obs_bounds[1] - general_config.obs_bounds[0]
-
-        def _dummy_normalisation(
-            value: float | np.ndarray, unnorm: bool = False
-        ) -> float | np.ndarray:
-            if not unnorm:
-                return value * y_range / x_range + general_config.obs_bounds[0]
-            return value * x_range / y_range
-
-        return _dummy_normalisation
 
     def _reshape_to_length_n(self, array: np.array, length: int) -> np.array:
         """
@@ -211,30 +162,12 @@ class SimpleDriver(gym.Env):
         # game specifics for observation space and actions
         done = False
 
-        # normalize current speed
-        _normalized_velocity = self.velocity_ms_normalisation(new_velocity)
-
-        # Get target speed vector, normalize and calculate deviation
-        len_outlook_iteration = np.min(
-            [self.total_no_timesteps - self.current_time_step, self.outlook_length]
-        )  # get future reference trajectory, shorted if we are at end of episode
-        _velocity_target_ms_norm = self.target_velocity_traj_ms_normalized[
-            self.current_time_step : (self.current_time_step + len_outlook_iteration)
-        ]
-        # if len outlook of this episode is shorter than total outlook length, then append values to
-        # make it the same length, pay attention to the fact that the last value is repeated and
-        # should be set meaningful
-        if len_outlook_iteration < self.outlook_length:
-            _velocity_target_ms_norm = self._append_short_trajectory_ms_values(
-                trajectory=_velocity_target_ms_norm
-            )
-        # divide by 2 to ensure the sum of two normalized numbers is in the normalization range
-        deviation = (_normalized_velocity - float(_velocity_target_ms_norm[0])) / 2
-        observation = np.append(_velocity_target_ms_norm, deviation)
+        observation = self.get_observation(
+            driver_physics_params=self.game_physics_params
+        )
         # TODO: outsource reward
         # Calculate Reward
-        reward = -abs(deviation)
-        reward = reward * self.reward_scaling
+        reward = self.get_reward(observation)
 
         # update time step
         self.current_time_step += 1
@@ -244,17 +177,8 @@ class SimpleDriver(gym.Env):
 
         return observation, reward, done, False, {}
 
-    def _append_short_trajectory_ms_values(self, trajectory: np.ndarray) -> np.ndarray:
-        """method to update the outlook velocity trajectory if the episode is
-        shorter than the total outlook length
-
-        Args:
-            trajectory (np.ndarray): trajectory to be updated
-
-        Returns:
-            np.ndarray: updated trajectory
-        """
-        return trajectory
+    def get_reward(self, observation: np.ndarray) -> float:
+        return 0
 
     def reset(
         self,
