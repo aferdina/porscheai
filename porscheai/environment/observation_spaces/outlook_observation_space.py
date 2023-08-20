@@ -18,7 +18,7 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
         self,
         reference_trajectory: ReferenceTrajectory,
         outlook_length: int = 1,
-        obs_bounds: Tuple[float, float] = (-1,1),
+        obs_bounds: Tuple[float, float] = (-1, 1),
         reward_scaling: float = 1,
     ) -> None:
         super().__init__()
@@ -56,22 +56,24 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
             dtype=np.float32,
         )
 
-    def get_observation(self, driver_physics: DriverPhysicsParameter) -> np.ndarray:
+    def get_observation(
+        self, driver_physics_params: DriverPhysicsParameter
+    ) -> np.ndarray:
         # normalize current speed
         _normalized_velocity = self.velocity_ms_normalisation(
-            driver_physics.velocity_ms
+            driver_physics_params.velocity_ms
         )
 
         # Get target speed vector, normalize and calculate deviation
         len_outlook_iteration = np.min(
             [
-                self.total_no_timesteps - driver_physics.current_time_step,
+                self.total_no_timesteps - driver_physics_params.current_time_step,
                 self.outlook_length,
             ]
         )  # get future reference trajectory, shorted if we are at end of episode
         _velocity_target_ms_norm = self.target_velocity_traj_ms_normalized[
-            driver_physics.current_time_step : (
-                driver_physics.current_time_step + len_outlook_iteration
+            driver_physics_params.current_time_step : (
+                driver_physics_params.current_time_step + len_outlook_iteration
             )
         ]
         # if len outlook of this episode is shorter than total outlook length, then append values to
@@ -150,7 +152,8 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
         Returns:
             float: reward
         """
-        return -abs(observation[-1]) * self.reward_scaling
+        deviation = observation[-1]
+        return -abs(deviation) * self.reward_scaling
 
 
 __all__ = [OutlookObservationSpace.__name__]
