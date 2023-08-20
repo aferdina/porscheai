@@ -1,13 +1,12 @@
 """ base environment for driver gym environment
 """
-from typing import Any, Dict, Tuple, Callable
+from typing import Any, Dict, Tuple
 import gymnasium as gym
 import numpy as np
 from porscheai.environment.configs import (
     GeneralGameconfigs,
     ReferenceTrajectory,
     PhysicConfigs,
-    create_reference_trajecotry_ms,
     DriverPhysicsParameter,
     ObservationSpaceConfigs,
     ActionSpaceConfigs,
@@ -19,7 +18,9 @@ from porscheai.environment.action_spaces import OneForBrakeAndGearActionSpace
 df_general_game_configs = GeneralGameconfigs()
 df_trajectory_configs = ReferenceTrajectory()
 df_physic_configs = PhysicConfigs()
-df_observations_sapce_configs = OutlookObservationSpace()
+df_observations_sapce_configs = OutlookObservationSpace(
+    reference_trajectory=df_trajectory_configs
+)
 df_action_space_configs = OneForBrakeAndGearActionSpace()
 
 
@@ -28,7 +29,6 @@ class SimpleDriver(gym.Env):
 
     def __init__(
         self,
-        game_configs: GeneralGameconfigs = df_general_game_configs,
         traj_configs: ReferenceTrajectory = df_trajectory_configs,
         physic_configs: PhysicConfigs = df_physic_configs,
         observation_space_configs: ObservationSpaceConfigs = df_observations_sapce_configs,
@@ -58,7 +58,6 @@ class SimpleDriver(gym.Env):
 
         # Outsource to reward configs afterwards
         # reward configs
-        self.reward_scaling = game_configs.rewardscale
 
         self.game_physics_params: DriverPhysicsParameter = DriverPhysicsParameter(
             velocity_ms=self.start_velocity_ms
@@ -67,23 +66,9 @@ class SimpleDriver(gym.Env):
         # Gym setup
         # current state space consist of future target velocities and current deviation
         self.observation_space = observation_space_configs.create_observation_space()
-        self.get_observation = observation_space_configs.get_observation
-        self.get_reward = observation_space_configs.get_reward
+        self.observation_space_configs = observation_space_configs
         # adapt to multiple types of action spaces
-        self.action_space = action_space_configs.create_action_space()
-
-    def get_observation(
-        self, driver_physics_params: DriverPhysicsParameter
-    ) -> np.ndarray:
-        """get observation
-
-        Args:
-            driver_physics_params (DriverPhysicsParameter): physics parameters of the driver
-
-        Returns:
-            np.ndarray: observation
-        """
-        return np.empty()
+        self.action_space_configs = action_space_configs
 
     def get_start_velocity_ms(self, traj_conifgs: ReferenceTrajectory) -> float:
         """get start velocity of car based on configurations
@@ -110,28 +95,6 @@ class SimpleDriver(gym.Env):
         array = np.append(array, np.repeat(array[-1], length - len_array))
         return array
 
-    def get_throttle(self, action: np.ndarray) -> float:
-        """get throttle value from actions
-
-        Args:
-            action (np.ndarray): action to play
-
-        Returns:
-            float: throttle value
-        """
-        return action
-
-    def get_brake(self, action: np.ndarray) -> float:
-        """get brake value from action
-
-        Args:
-            action (np.ndarray): action to play
-
-        Returns:
-            float: brake value
-        """
-        return action
-
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """doing one step in car simulation environment
 
@@ -146,8 +109,8 @@ class SimpleDriver(gym.Env):
         # do all physics for the game
         if action is not None:
             # unnormalize the actions
-            throttle = self.get_throttle(action=action)
-            brake = self.get_brake(action=action)
+            throttle = self.action_space_configs.get_throttle_from_action(action=action)
+            brake = self.action_space_configs.get_brake_from_action(action=action)
             new_velocity = self.physics.get_velocity(
                 throttle=throttle,
                 brake=brake,
@@ -162,12 +125,12 @@ class SimpleDriver(gym.Env):
         # game specifics for observation space and actions
         done = False
 
-        observation = self.get_observation(
+        observation = self.observation_space_configs(
             driver_physics_params=self.game_physics_params
         )
-        # TODO: outsource reward
+
         # Calculate Reward
-        reward = self.get_reward(observation)
+        reward = self.observation_space_configs.get_reward(observation)
 
         # update time step
         self.current_time_step += 1
@@ -176,9 +139,6 @@ class SimpleDriver(gym.Env):
             done = True
 
         return observation, reward, done, False, {}
-
-    def get_reward(self, observation: np.ndarray) -> float:
-        return 0
 
     def reset(
         self,
