@@ -26,7 +26,9 @@ class ObservationSpaceConfigs(ABC):
         """
 
     @abstractmethod
-    def get_observation(self, *args) -> np.ndarray:
+    def get_observation(
+        self, driver_physics_params: DriverPhysicsParameter
+    ) -> np.ndarray:
         """get observation
 
         Args:
