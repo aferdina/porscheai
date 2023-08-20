@@ -11,7 +11,7 @@ from porscheai.environment.configs.abstract_classes import (
 
 
 class OneForBrakeAndGearActionSpace(ActionSpaceConfigs):
-    def __init__(self, action_space_bounds: Tuple[float, float]) -> None:
+    def __init__(self, action_space_bounds: Tuple[float, float] = (-1.0, 1.0)) -> None:
         super().__init__()
         self.action_space_bounds = action_space_bounds
 
@@ -23,3 +23,15 @@ class OneForBrakeAndGearActionSpace(ActionSpaceConfigs):
             shape=(_action_space_length,),
             dtype=np.float32,
         )
+
+    def get_brake_from_action(self) -> float:
+        return super().get_brake_from_action()
+
+    def get_throttle_from_action(self) -> float:
+        return super().get_throttle_from_action()
+
+    def unnormalize_action(self, action: np.ndarray) -> np.ndarray:
+        return super().unnormalize_action(action=action)
+
+
+__all__ = [OneForBrakeAndGearActionSpace.__name__]
