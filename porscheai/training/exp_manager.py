@@ -14,7 +14,6 @@ import numpy as np
 import optuna
 import torch as th
 import yaml
-from sb3_contrib.common.wrappers import ActionMasker
 from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
 from gymnasium import spaces
 from optuna.pruners import BasePruner, MedianPruner, NopPruner, SuccessiveHalvingPruner
@@ -584,7 +583,7 @@ class ExperimentManager:
             save_vec_normalize = SaveVecNormalizeCallback(
                 save_freq=1, save_path=self.params_path
             )
-            eval_callback = MaskableEvalCallback(
+            eval_callback = EvalCallback(
                 self.create_envs(self.n_eval_envs, eval_env=True),
                 callback_on_new_best=save_vec_normalize,
                 best_model_save_path=self.save_path,
@@ -592,7 +591,6 @@ class ExperimentManager:
                 log_path=self.save_path,
                 eval_freq=self.eval_freq,
                 deterministic=self.deterministic_eval,
-                use_masking=True,
             )
 
             self.callbacks.append(eval_callback)
