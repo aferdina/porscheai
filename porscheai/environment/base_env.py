@@ -19,7 +19,9 @@ df_physic_configs = PhysicConfigs()
 df_observations_sapce_configs = OutlookObservationSpace(
     reference_trajectory=df_trajectory_configs
 )
-df_action_space_configs = OneForBrakeAndGearActionSpace()
+df_action_space_configs = OneForBrakeAndGearActionSpace(
+    physics_configs=df_physic_configs
+)
 
 
 class SimpleDriver(gym.Env):
@@ -44,6 +46,7 @@ class SimpleDriver(gym.Env):
         """
 
         self.physics = physic_configs
+        self.traj_configs = traj_configs
         # needed information for game
         self.total_no_timesteps: int = traj_configs.total_timesteps
         self.time_step_size_s: float = traj_configs.simulation_frequency_s
@@ -85,14 +88,6 @@ class SimpleDriver(gym.Env):
             else traj_conifgs.velocities_ms[0]
         )
         return start_velocity_ms
-
-    def _reshape_to_length_n(self, array: np.array, length: int) -> np.array:
-        """
-        Stretches a 1d numpy array to length n.
-        """
-        len_array = len(array)
-        array = np.append(array, np.repeat(array[-1], length - len_array))
-        return array
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """doing one step in car simulation environment
