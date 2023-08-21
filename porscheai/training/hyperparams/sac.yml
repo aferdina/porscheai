@@ -1,6 +1,7 @@
 # ==== Custom Envs ===
 
 Simple-Driver:
+  normalize: "{'norm_obs': True, 'norm_reward': True}"
   n_timesteps: !!float 1e6
   policy: 'MlpPolicy'
   learning_rate: !!float 7.3e-4
