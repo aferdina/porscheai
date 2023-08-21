@@ -77,6 +77,7 @@ from porscheai.training.utils import (
 
 from porscheai.environment.base_env import SimpleDriver
 
+
 class ExperimentManager:
     """
     Experiment manager: read the hyperparameters,
@@ -327,7 +328,7 @@ class ExperimentManager:
         :param saved_hyperparams:
         """
         # Save hyperparams
-        #TODO: [AD-180] add constructors to generate readable OrderedDict
+        # TODO: [AD-180] add constructors to generate readable OrderedDict
         with open(os.path.join(self.params_path, "config.yml"), "w") as f:
             yaml.dump(saved_hyperparams, f)
 
@@ -706,23 +707,11 @@ class ExperimentManager:
         #         spec = gym26.spec(self.env_name.gym_id)
 
         def make_env(**kwargs) -> SimpleDriver:
-            """return acion masked game environment, configurations settings get from folder path, otherwise default
+            """return Simple Driver Environment
 
             Returns:
-                Verbund: return supply chain environment
+                SimpleDriver: return supply chain environment
             """
-
-            def mask_fn(game_env: SimpleDriver) -> np.ndarray:
-                """helper function to mask an environment
-
-                Args:
-                    game_env (gym.Env): used gym environment to mask
-
-                Returns:
-                    np.ndarray: numpy array consists of ones and zeros,
-                    depending if action is valid (e.g 1) or not (e.g. 0)
-                """
-                return game_env.compute_action_mask()
 
             return SimpleDriver()
 
@@ -776,35 +765,6 @@ class ExperimentManager:
                 env = VecTransposeImage(env)
 
         return env
-
-    @staticmethod
-    def get_game_configuration(
-        settingspath: str,
-    ) -> Tuple[SupplyChain, RewardFunction, GeneralGameConfig]:
-        """get all required game configuration from settings path
-
-        Args:
-            settings_path (str): path to the configuration folder
-
-        Returns:
-            Tuple[SupplyChain, RewardFunction, GeneralGameConfig]: Instance of Supply Chain Process, Reward Function and general game configurations
-        """
-        supply_path = os.path.join(settingspath, ConfigFiles.GAMECONFIG)
-        general_game_config_path = os.path.join(
-            settingspath, ConfigFiles.GENERALGAMECONFIG
-        )
-        reward_function_path = os.path.join(settingspath, ConfigFiles.REWARDFUNCTION)
-        supply_chain_process = get_supply_chain_process(yml_path=supply_path)
-        reward_function = get_settings_from_yaml(
-            yml_path=reward_function_path,
-            settings_type=RewardGameConfigEnumClasses.REWARDFUNCTION,
-        )
-        general_game_config = get_settings_from_yaml(
-            yml_path=general_game_config_path,
-            settings_type=RewardGameConfigEnumClasses.GENERALGAMECONFIG,
-        )
-
-        return (supply_chain_process, reward_function, general_game_config)
 
     def _load_pretrained_agent(
         self, hyperparams: Dict[str, Any], env: VecEnv
