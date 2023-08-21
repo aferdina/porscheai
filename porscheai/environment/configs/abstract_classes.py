@@ -1,5 +1,5 @@
 """observation space configs"""
-
+from typing import Any
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import gymnasium as gym
@@ -56,25 +56,26 @@ class ActionSpaceConfigs(ABC):
     @abstractmethod
     def create_action_space(self) -> gym.Space:
         """create action space
-
         Returns:
             gym.Space: action space
         """
 
     @abstractmethod
-    def get_brake_from_action(
-        self,
-    ) -> float:
+    def get_brake_from_action(self, action: Any) -> float:
         """get action
+
+        Args:
+            action (Any): action from action space
         Returns:
             float: brake value as float
         """
 
     @abstractmethod
-    def get_throttle_from_action(
-        self,
-    ) -> float:
+    def get_throttle_from_action(self, action: Any) -> float:
         """get action
+
+        Args:
+            action (Any): action from action space
         Returns:
             float: throttle value as float
         """
