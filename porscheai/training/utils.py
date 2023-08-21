@@ -225,7 +225,7 @@ def create_test_env(
     :return:
     """
     # Avoid circular import
-    from autohpo.exp_manager import ExperimentManager
+    from porscheai.training.exp_manager import ExperimentManager
 
     # Create the environment and wrap it if necessary
     assert hyperparams is not None
@@ -266,20 +266,7 @@ def create_test_env(
     #     #     spec = gym26.spec(env_id)
 
     def make_env(**kwargs) -> SimpleDriver:
-        def mask_fn(game_env: SimpleDriver):
-            """helper function to mask an environment
-
-            Args:
-                game_env (gym.Env): used gym environment to mask
-
-            Returns:
-                np.ndarray: numpy array consists of ones and zeros,
-                depending if action is valid (e.g 1) or not (e.g. 0)
-            """
-            return game_env.compute_action_mask()
-
-        game_env = SimpleDriver()
-        env = ActionMasker(game_env, mask_fn)
+        env = SimpleDriver()
         return env
 
     env = make_vec_env(
