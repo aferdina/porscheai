@@ -18,13 +18,13 @@ def train() -> None:
     parser.add_argument(
         "--algo",
         help="RL Algorithm",
-        default="maskableppo_service_level_second_use_case",
+        default="sac",
         type=str,
         required=False,
         choices=list(ALGOS.keys()),
     )
     parser.add_argument(
-        "--env", type=str, default="LogisticGame", help="environment ID"
+        "--env", type=str, default="Simple-Driver", help="environment ID"
     )
     parser.add_argument(
         "-tb",
