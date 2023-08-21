@@ -25,3 +25,12 @@ def test_easy_general_game_config(env: SimpleDriver):
         env.traj_configs.velocities_kmh,
         np.array([0.0, 10.0, 20.0, 15.0, 20.0, 15.0], dtype=np.float32),
     )
+    obs, info = env.reset()
+    for _ in range(1000):
+        action = env.action_space.sample()
+        obs, reward, truncated, done, info = env.step(action)
+        assert env.observation_space.contains(obs)
+        assert isinstance(reward, float)
+        assert isinstance(done, bool)
+        assert isinstance(info, dict)
+        assert isinstance(truncated, bool)
