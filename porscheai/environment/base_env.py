@@ -114,7 +114,6 @@ class SimpleDriver(gym.Env):
 
         # update velocity and time
         self.game_physics_params.velocity_ms = new_velocity
-        self.game_physics_params.current_time_step = self.current_time_step + 1
         # game specifics for observation space and actions
         done = False
 
@@ -124,7 +123,9 @@ class SimpleDriver(gym.Env):
 
         # Calculate Reward
         reward = self.observation_space_configs.get_reward(observation)
-
+        self.game_physics_params.current_time_step = (
+            self.game_physics_params.current_time_step + 1
+        )
         # Check if Round is done
         if self.game_physics_params.current_time_step == self.total_no_timesteps:
             done = True
