@@ -33,6 +33,15 @@ jobs:
         pip install poetry
         poetry config virtualenvs.create false
         poetry install
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pypoetry
+          pyproject.toml
+        key: ${{ runner.os }}-poetry-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
     - name: Lint with ruff
       run: |
         make lint
