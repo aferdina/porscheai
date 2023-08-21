@@ -46,3 +46,7 @@ build/
 *.swp
 
 # Add your custom files/directories to ignore below this line
+
+#training files
+monitor_tmp
+logs
