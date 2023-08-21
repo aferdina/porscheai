@@ -40,11 +40,11 @@ class RenderWrapper(gym.Wrapper):
         self.isopen: bool = True
 
     def _init_statistics(self) -> None:
-        self.brake_history: List = []
-        self.reward_history: List = []
-        self.throttle_history: List = []
-        self.velocity_ms_history: List[float] = []
-        self.action_history: List = []
+        self.brake_history = []
+        self.reward_history = []
+        self.throttle_history = []
+        self.velocity_ms_history = []
+        self.action_history = []
 
     def render(self, mode: str = "human", close: bool = False) -> None:
         """Renders the environment.
@@ -107,7 +107,7 @@ class RenderWrapper(gym.Wrapper):
             pygame.quit()
 
     def step(
-        self, action: int
+        self, action: float
     ) -> Tuple[OrderedDict[str, Any], float, bool, bool, dict]:
         """interaction with the game environment by playing action `step_action`
         and overload method by updating statistics
