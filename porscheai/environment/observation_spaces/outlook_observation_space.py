@@ -74,7 +74,7 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
         )  # get future reference trajectory, shorted if we are at end of episode
         _velocity_target_ms_norm = self.target_velocity_traj_ms_normalized[
             driver_physics_params.current_time_step : (
-                driver_physics_params.current_time_step + len_outlook_iteration
+                driver_physics_params.current_time_step + len_outlook_iteration + 1
             )
         ]
         # if len outlook of this episode is shorter than total outlook length, then append values to
@@ -86,7 +86,7 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
             )
         # divide by 2 to ensure the sum of two normalized numbers is in the normalization range
         deviation = (_normalized_velocity - float(_velocity_target_ms_norm[0])) / 2
-        return np.append(_velocity_target_ms_norm, deviation)
+        return np.append(_velocity_target_ms_norm[1:], deviation)
 
     # pylint: disable=E0202
     def velocity_ms_normalisation(
