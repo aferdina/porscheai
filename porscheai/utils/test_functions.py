@@ -19,7 +19,15 @@ def is_stricly_increasing(arr: np.ndarray) -> bool:
     return True
 
 
-def is_float32_array(arr):
+def is_float32_array(arr: Any) -> bool:
+    """_summary_
+
+    Args:
+        arr (Any): variable to check
+
+    Returns:
+        bool: true if variable is a numpy array of type float32
+    """
     if isinstance(arr, np.ndarray) and arr.dtype == np.float32:
         return True
     return False
