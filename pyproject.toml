@@ -13,6 +13,8 @@ stable-baselines3 = "^2.0.0"
 tensorboard = "^2.14.0"
 strenum = "^0.4.15"
 sb3-contrib = "^2.0.0"
+pyyaml = "^6.0.1"
+optuna = "^3.3.0"
 
 
 [tool.poetry.group.dev.dependencies]

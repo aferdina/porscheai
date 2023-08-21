@@ -67,6 +67,7 @@ class SimpleDriver(gym.Env):
         self.observation_space_configs = observation_space_configs
         # adapt to multiple types of action spaces
         self.action_space_configs = action_space_configs
+        self.action_space = action_space_configs.create_action_space()
 
     def get_start_velocity_ms(self, traj_conifgs: ReferenceTrajectory) -> float:
         """get start velocity of car based on configurations
@@ -123,7 +124,7 @@ class SimpleDriver(gym.Env):
         # game specifics for observation space and actions
         done = False
 
-        observation = self.observation_space_configs(
+        observation = self.observation_space_configs.get_observation(
             driver_physics_params=self.game_physics_params
         )
 
