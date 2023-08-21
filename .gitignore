@@ -50,3 +50,7 @@ build/
 #training files
 monitor_tmp
 logs
+
+#testing files
+htmlcov
+.coverage

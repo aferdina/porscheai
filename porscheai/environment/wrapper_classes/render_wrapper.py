@@ -69,7 +69,7 @@ class RenderWrapper(gym.Wrapper):
         velocity_history_group = pygame.sprite.Group()
         velocity_data = {
             "target_velocity": self.target_trajectory_velocity_ms[
-                : self.env.current_time_step
+                : self.env.game_physics_params.current_time_step
             ],
             "agent_velocity": self.velocity_ms_history,
         }
@@ -93,7 +93,9 @@ class RenderWrapper(gym.Wrapper):
         # rendering the current game period
         font = pygame.font.Font(None, 24)
         count_text = font.render(
-            f"Count: {self.env.current_time_step}", True, Colors.PURPLE.value
+            f"Count: {self.env.game_physics_params.current_time_step}",
+            True,
+            Colors.PURPLE.value,
         )
         text_rect = count_text.get_rect()
         text_rect.bottomright = [WINDOW_W, WINDOW_H]
@@ -122,12 +124,12 @@ class RenderWrapper(gym.Wrapper):
         self.action_history.append(action)
         _brake = self.env.action_space_configs.get_brake_from_action(action)
         _throttle = self.env.action_space_configs.get_throttle_from_action(action)
-        self.velocity_ms_history.append(self.env.game_physics_params.velocity_ms)
         self.brake_history.append(_brake)
         self.throttle_history.append(_throttle)
         # get throttle and brake value
         # get velocitity value
         # get acceleration value
         observation, reward, done, truncated, info = self.env.step(action)
+        self.velocity_ms_history.append(self.env.game_physics_params.velocity_ms)
         self.reward_history.append(reward)
         return observation, reward, done, truncated, info

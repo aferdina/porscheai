@@ -53,15 +53,13 @@ class SimpleDriver(gym.Env):
         self.start_velocity_ms: float = self.get_start_velocity_ms(
             traj_conifgs=traj_configs
         )
-
-        self.current_time_step: int = 0
         # observation space dependent information
 
         # Outsource to reward configs afterwards
         # reward configs
 
         self.game_physics_params: DriverPhysicsParameter = DriverPhysicsParameter(
-            velocity_ms=self.start_velocity_ms
+            velocity_ms=self.start_velocity_ms, current_time_step=0
         )
 
         # Gym setup
@@ -114,8 +112,8 @@ class SimpleDriver(gym.Env):
         else:
             new_velocity = self.start_velocity_ms
 
+        # update velocity and time
         self.game_physics_params.velocity_ms = new_velocity
-
         # game specifics for observation space and actions
         done = False
 
@@ -125,11 +123,11 @@ class SimpleDriver(gym.Env):
 
         # Calculate Reward
         reward = self.observation_space_configs.get_reward(observation)
-
-        # update time step
-        self.current_time_step += 1
+        self.game_physics_params.current_time_step = (
+            self.game_physics_params.current_time_step + 1
+        )
         # Check if Round is done
-        if self.current_time_step == self.total_no_timesteps:
+        if self.game_physics_params.current_time_step == self.total_no_timesteps:
             done = True
 
         return observation, reward, done, False, {}
@@ -150,7 +148,8 @@ class SimpleDriver(gym.Env):
             tuple[np.ndarray, dict[str, Any]]: first state and info dictionary
         """
         super().reset(seed=seed, options=options)
-        self.current_time_step = 0
+        self.game_physics_params.velocity_ms = self.start_velocity_ms
+        self.game_physics_params.current_time_step = 0
         return self.step(action=None)[0], {}
 
     def render(self, mode="human"):
