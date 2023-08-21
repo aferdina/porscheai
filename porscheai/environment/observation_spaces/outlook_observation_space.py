@@ -37,6 +37,7 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
         self.target_velocity_traj_ms_normalized = self.velocity_ms_normalisation(
             _target_velocity_traj_ms.copy()
         )
+        self.last_target_velocity_ms = self.target_velocity_traj_ms_normalized[-1]
         self.reward_scaling = reward_scaling
 
     def create_observation_space(self) -> Box:
@@ -113,6 +114,12 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
         Returns:
             np.ndarray: updated trajectory
         """
+        np.pad(
+            trajectory,
+            (0, self.outlook_length - len(trajectory)),
+            mode="constant",
+            constant_values=self.last_target_velocity_ms,
+        )
         return trajectory
 
     def _get_velocity_ms_normalisation(
