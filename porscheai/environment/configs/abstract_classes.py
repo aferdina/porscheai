@@ -1,7 +1,8 @@
 """observation space configs"""
-from typing import Any
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
+
 import gymnasium as gym
 import numpy as np
 

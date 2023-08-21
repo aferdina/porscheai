@@ -2,7 +2,8 @@ from typing import Any, Dict
 
 import numpy as np
 import optuna
-from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3.common.noise import (NormalActionNoise,
+                                            OrnsteinUhlenbeckActionNoise)
 from torch import nn as nn
 
 from porscheai.training.utils import linear_schedule

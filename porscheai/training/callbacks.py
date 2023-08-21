@@ -2,17 +2,18 @@ import os
 import tempfile
 import time
 from copy import deepcopy
+from enum import Enum
 from functools import wraps
 from threading import Thread
-from typing import Optional, Type, Union, List
-from enum import Enum
+from typing import Optional, Type, Union
+
+import numpy as np
 import optuna
 from sb3_contrib import TQC
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
 from stable_baselines3.common.logger import TensorBoardOutputFormat
 from stable_baselines3.common.vec_env import VecEnv
-import numpy as np
 
 
 class ReplaceString(Enum):

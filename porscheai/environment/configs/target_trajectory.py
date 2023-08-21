@@ -1,14 +1,15 @@
 """
 This module contains the configs for the reference trajectory
 """
-from typing import Tuple
 from dataclasses import dataclass
-from strenum import StrEnum
-import numpy as np
-import matplotlib.pyplot as plt
-from porscheai.utils import is_float32_array, is_stricly_increasing
-from porscheai.utils import FACTOR_KMH_MS
+from typing import Tuple
 
+import matplotlib.pyplot as plt
+import numpy as np
+from strenum import StrEnum
+
+from porscheai.utils import (FACTOR_KMH_MS, is_float32_array,
+                             is_stricly_increasing)
 
 # some plotting constants
 TRAJ_X_LABEL = "Time (Sec.)"

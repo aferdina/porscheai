@@ -1,7 +1,6 @@
 import argparse
 import importlib
 import os
-import pandas as pd
 import pickle as pkl
 import time
 import warnings
@@ -9,72 +8,52 @@ from collections import OrderedDict
 from pathlib import Path
 from pprint import pprint
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import gymnasium as gym
 import numpy as np
 import optuna
 import torch as th
 import yaml
-from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
 from gymnasium import spaces
-from optuna.pruners import BasePruner, MedianPruner, NopPruner, SuccessiveHalvingPruner
+from optuna.pruners import (BasePruner, MedianPruner, NopPruner,
+                            SuccessiveHalvingPruner)
 from optuna.samplers import BaseSampler, RandomSampler, TPESampler
 from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
-from optuna.visualization import plot_optimization_history, plot_param_importances
+from optuna.visualization import (plot_optimization_history,
+                                  plot_param_importances)
 from sb3_contrib.common.vec_env import AsyncEval
-
 # For using HER with GoalEnv
 from stable_baselines3 import HerReplayBuffer
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.callbacks import (
-    BaseCallback,
-    CheckpointCallback,
-    EvalCallback,
-    ProgressBarCallback,
-)
+from stable_baselines3.common.callbacks import (BaseCallback,
+                                                CheckpointCallback,
+                                                EvalCallback,
+                                                ProgressBarCallback)
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.noise import (
-    NormalActionNoise,
-    OrnsteinUhlenbeckActionNoise,
-)
+from stable_baselines3.common.noise import (NormalActionNoise,
+                                            OrnsteinUhlenbeckActionNoise)
 from stable_baselines3.common.preprocessing import (
-    is_image_space,
-    is_image_space_channels_first,
-)
-from stable_baselines3.common.sb2_compat.rmsprop_tf_like import (
-    RMSpropTFLike,
-)  # noqa: F401
+    is_image_space, is_image_space_channels_first)
+from stable_baselines3.common.sb2_compat.rmsprop_tf_like import \
+    RMSpropTFLike  # noqa: F401
 from stable_baselines3.common.utils import constant_fn
-from stable_baselines3.common.vec_env import (
-    DummyVecEnv,
-    SubprocVecEnv,
-    VecEnv,
-    VecFrameStack,
-    VecNormalize,
-    VecTransposeImage,
-    is_vecenv_wrapped,
-)
-
+from stable_baselines3.common.vec_env import (DummyVecEnv, SubprocVecEnv,
+                                              VecEnv, VecFrameStack,
+                                              VecNormalize, VecTransposeImage,
+                                              is_vecenv_wrapped)
 # For custom activation fn
 from torch import nn as nn
 
-# Register custom envs
-from porscheai.training.callbacks import (
-    SaveVecNormalizeCallback,
-    TrialEvalCallback,
-    TensorboardCallback,
-)
-from porscheai.training.hyperparams_opt import HYPERPARAMS_SAMPLER
-from porscheai.training.utils import (
-    ALGOS,
-    get_callback_list,
-    get_class_by_name,
-    get_latest_run_id,
-    get_wrapper_class,
-    linear_schedule,
-)
-
 from porscheai.environment.base_env import SimpleDriver
+# Register custom envs
+from porscheai.training.callbacks import (SaveVecNormalizeCallback,
+                                          TensorboardCallback,
+                                          TrialEvalCallback)
+from porscheai.training.hyperparams_opt import HYPERPARAMS_SAMPLER
+from porscheai.training.utils import (ALGOS, get_callback_list,
+                                      get_class_by_name, get_latest_run_id,
+                                      get_wrapper_class, linear_schedule)
 
 
 class ExperimentManager:

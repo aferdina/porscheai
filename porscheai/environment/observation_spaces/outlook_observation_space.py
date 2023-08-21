@@ -1,14 +1,14 @@
 """ some examples of observation space configs
 """
-from typing import Tuple, Callable
-from gymnasium.spaces import Box
+from typing import Callable, Tuple
+
 import numpy as np
-from porscheai.environment.configs import (
-    ObservationSpaceConfigs,
-    DriverPhysicsParameter,
-    ReferenceTrajectory,
-    create_reference_trajecotry_ms,
-)
+from gymnasium.spaces import Box
+
+from porscheai.environment.configs import (DriverPhysicsParameter,
+                                           ObservationSpaceConfigs,
+                                           ReferenceTrajectory,
+                                           create_reference_trajecotry_ms)
 
 
 class OutlookObservationSpace(ObservationSpaceConfigs):

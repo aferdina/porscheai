@@ -1,13 +1,10 @@
 """ base environment for driver gym environment
 """
+import math
 from dataclasses import dataclass, field
 from typing import Tuple
-import math
-from porscheai.utils import (
-    FACTOR_KMH_MS,
-    RHO_AIR_KGM3,
-    GRAVITY_MS
-)
+
+from porscheai.utils import FACTOR_KMH_MS, GRAVITY_MS, RHO_AIR_KGM3
 
 
 # TODO: clean up car configs

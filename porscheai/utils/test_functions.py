@@ -1,6 +1,7 @@
 """ contains type checking function for repository
 """
 from typing import Any
+
 import numpy as np
 
 

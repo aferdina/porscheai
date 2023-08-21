@@ -1,24 +1,20 @@
 """ render trained models with pygame
 """
 import os
-from functools import partial
 from typing import OrderedDict
-import pygame
-from strenum import StrEnum
-import numpy as np
-import yaml
+
 import gymnasium as gym
-from sb3_contrib.common.wrappers import ActionMasker
-from sb3_contrib import MaskablePPO  # pylint: disable=W0611
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.vec_env import VecNormalize, VecEnv
+import pygame
+import yaml
 from stable_baselines3.common.base_class import BaseAlgorithm
-from porscheai.training.utils import ALGOS, get_wrapper_class
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import VecEnv, VecNormalize
+from strenum import StrEnum
+
 from porscheai.environment.base_env import SimpleDriver
-from porscheai.environment.wrapper_classes.render_wrapper import (
-    WINDOW_H,
-    WINDOW_W,
-)
+from porscheai.environment.wrapper_classes.render_wrapper import (WINDOW_H,
+                                                                  WINDOW_W)
+from porscheai.training.utils import ALGOS, get_wrapper_class
 
 RENDERWRAPPER = "porscheai.environment.wrapper_classes.render_wrapper.RenderWrapper"
 

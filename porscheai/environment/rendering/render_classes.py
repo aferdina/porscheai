@@ -1,14 +1,14 @@
 """ add classes for rendering game content in pygame
 """
-from typing import Dict
 from dataclasses import dataclass
 from enum import Enum
-from strenum import StrEnum
-import numpy as np
+from typing import Dict
+
 import matplotlib.pyplot as plt
 import pygame
-from pygame.sprite import Sprite
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from pygame.sprite import Sprite
+from strenum import StrEnum
 
 
 class Colors(Enum):

@@ -1,18 +1,16 @@
 """ base environment for driver gym environment
 """
 from typing import Any, Dict, Tuple
+
 import gymnasium as gym
 import numpy as np
-from porscheai.environment.configs import (
-    ReferenceTrajectory,
-    PhysicConfigs,
-    DriverPhysicsParameter,
-    ObservationSpaceConfigs,
-    ActionSpaceConfigs,
-)
-from porscheai.environment.observation_spaces import OutlookObservationSpace
-from porscheai.environment.action_spaces import OneForBrakeAndGearActionSpace
 
+from porscheai.environment.action_spaces import OneForBrakeAndGearActionSpace
+from porscheai.environment.configs import (ActionSpaceConfigs,
+                                           DriverPhysicsParameter,
+                                           ObservationSpaceConfigs,
+                                           PhysicConfigs, ReferenceTrajectory)
+from porscheai.environment.observation_spaces import OutlookObservationSpace
 
 df_trajectory_configs = ReferenceTrajectory()
 df_physic_configs = PhysicConfigs()

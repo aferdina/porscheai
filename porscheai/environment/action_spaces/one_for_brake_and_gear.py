@@ -1,13 +1,12 @@
 """ some examples of action space configs
 """
 from typing import Tuple
-from gymnasium.spaces import Box
-import numpy as np
-from porscheai.environment.configs.abstract_classes import (
-    ActionSpaceConfigs,
-)
-from porscheai.environment.configs import PhysicConfigs
 
+import numpy as np
+from gymnasium.spaces import Box
+
+from porscheai.environment.configs import PhysicConfigs
+from porscheai.environment.configs.abstract_classes import ActionSpaceConfigs
 
 default_physics = PhysicConfigs()
 

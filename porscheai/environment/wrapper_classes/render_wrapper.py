@@ -1,16 +1,16 @@
 """ rendering wrapper method for Logistic game
 """
-from typing import Tuple, OrderedDict, Any, List
+from typing import Any, List, OrderedDict, Tuple
+
 import gymnasium as gym
 import pygame
-from porscheai.environment.configs import create_reference_trajecotry_ms
+
 from porscheai.environment.base_env import SimpleDriver
-from porscheai.environment.rendering.render_classes import (
-    BaseSpriteConfig,
-    HistorySprite,
-    Colors,
-    RectPositions,
-)
+from porscheai.environment.configs import create_reference_trajecotry_ms
+from porscheai.environment.rendering.render_classes import (BaseSpriteConfig,
+                                                            Colors,
+                                                            HistorySprite,
+                                                            RectPositions)
 
 # Constants for rendering
 METADATA = {"render_modes": ["human"], "render_fps": 60}
