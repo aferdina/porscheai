@@ -122,12 +122,12 @@ class RenderWrapper(gym.Wrapper):
         self.action_history.append(action)
         _brake = self.env.action_space_configs.get_brake_from_action(action)
         _throttle = self.env.action_space_configs.get_throttle_from_action(action)
-        self.velocity_ms_history.append(self.env.game_physics_params.velocity_ms)
         self.brake_history.append(_brake)
         self.throttle_history.append(_throttle)
         # get throttle and brake value
         # get velocitity value
         # get acceleration value
         observation, reward, done, truncated, info = self.env.step(action)
+        self.velocity_ms_history.append(self.env.game_physics_params.velocity_ms)
         self.reward_history.append(reward)
         return observation, reward, done, truncated, info
