@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-LINT_PATHS=multiarmedbandits/ tests/ 
+LINT_PATHS=porscheai/ tests/ 
 
 pytest:
 	$(SHELL) ./scripts/run_tests.sh
