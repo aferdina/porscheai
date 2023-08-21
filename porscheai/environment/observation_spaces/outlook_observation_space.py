@@ -18,8 +18,8 @@ class OutlookObservationSpace(ObservationSpaceConfigs):
         self,
         reference_trajectory: ReferenceTrajectory,
         outlook_length: int = 1,
-        obs_bounds: Tuple[float, float] = (-1, 1),
-        reward_scaling: float = 1,
+        obs_bounds: Tuple[float, float] = (-1.0, 1.0),
+        reward_scaling: float = 1.0,
     ) -> None:
         super().__init__()
         self.outlook_length = outlook_length
