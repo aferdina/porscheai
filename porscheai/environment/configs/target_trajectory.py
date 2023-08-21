@@ -55,7 +55,10 @@ class ReferenceTrajectory:
         ), "second marker must increasing"
         self.velocities_ms = self.velocities_kmh / FACTOR_KMH_MS
         self.velocity_bounds_kmh = (min(self.velocities_kmh), max(self.velocities_kmh))
-        self.velocity_bounds_ms = self.velocity_bounds_kmh / FACTOR_KMH_MS
+        self.velocity_bounds_ms = (
+            self.velocity_bounds_kmh[0] / FACTOR_KMH_MS,
+            self.velocity_bounds_kmh[1] / FACTOR_KMH_MS,
+        )
         self.last_time_step = np.max(self.seconds_markers_s)
         self.first_time_step = np.min(self.seconds_markers_s)
         self.total_duration = self.last_time_step - self.first_time_step
