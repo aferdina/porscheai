@@ -4,7 +4,6 @@ from typing import Any, Dict, Tuple
 import gymnasium as gym
 import numpy as np
 from porscheai.environment.configs import (
-    GeneralGameconfigs,
     ReferenceTrajectory,
     PhysicConfigs,
     DriverPhysicsParameter,
@@ -15,7 +14,6 @@ from porscheai.environment.observation_spaces import OutlookObservationSpace
 from porscheai.environment.action_spaces import OneForBrakeAndGearActionSpace
 
 
-df_general_game_configs = GeneralGameconfigs()
 df_trajectory_configs = ReferenceTrajectory()
 df_physic_configs = PhysicConfigs()
 df_observations_sapce_configs = OutlookObservationSpace(
