@@ -1,15 +1,13 @@
 """ init configurations for tests
 """
-import pytest
 import numpy as np
-from porscheai.environment.base_env import SimpleDriver
-from porscheai.environment.configs import (
-    ReferenceTrajectory,
-    PhysicConfigs,
-    CarConfigs,
-)
-from porscheai.environment.observation_spaces import OutlookObservationSpace
+import pytest
+
 from porscheai.environment.action_spaces import OneForBrakeAndGearActionSpace
+from porscheai.environment.base_env import SimpleDriver
+from porscheai.environment.configs import (CarConfigs, PhysicConfigs,
+                                           ReferenceTrajectory)
+from porscheai.environment.observation_spaces import OutlookObservationSpace
 
 
 @pytest.fixture(scope="module")
