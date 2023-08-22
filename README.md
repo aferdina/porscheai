@@ -115,7 +115,5 @@ to run a trained model in pygame. The path `TRAINEDMODEL` to the stored agent sh
 
 ## Conclusion
 
-Congratulations! You've successfully trained an autonomous driving agent using reinforcement learning. The agent should now be capable of navigating the environment based on its learned policy.
-
 ## References
 
