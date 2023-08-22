@@ -7,10 +7,12 @@ import pygame
 
 from porscheai.environment.base_env import SimpleDriver
 from porscheai.environment.configs import create_reference_trajecotry_ms
-from porscheai.environment.rendering.render_classes import (BaseSpriteConfig,
-                                                            Colors,
-                                                            HistorySprite,
-                                                            RectPositions)
+from porscheai.environment.rendering.render_classes import (
+    BaseSpriteConfig,
+    Colors,
+    HistorySprite,
+    RectPositions,
+)
 
 # Constants for rendering
 METADATA = {"render_modes": ["human"], "render_fps": 60}
@@ -86,9 +88,27 @@ class RenderWrapper(gym.Wrapper):
         )
         velocity_history_group.add(velocity_sprite)
 
+        brake_throttle_group = pygame.sprite.Group()
+        brake_throttle_sprite = HistorySprite(
+            state_history={
+                "throttle": self.throttle_history,
+                "brake": self.brake_history,
+            },
+            spriteconfig=BaseSpriteConfig(
+                x_pos=WINDOW_W,
+                y_pos=0,
+                width=400,
+                height=400,
+                rect_position=RectPositions.TOPRIGHT,
+            ),
+            title="Throttle and Brake",
+        )
+        brake_throttle_group.add(brake_throttle_sprite)
+
         # plot images
         self.screen.fill(Colors.YELLOW.value)
         velocity_history_group.draw(self.screen)
+        brake_throttle_group.draw(self.screen)
 
         # rendering the current game period
         font = pygame.font.Font(None, 24)
@@ -115,7 +135,7 @@ class RenderWrapper(gym.Wrapper):
         and overload method by updating statistics
 
         Args:
-            step_action (int): number of produced lot sizes
+            action (float): action to play
 
         Returns:
             Tuple[OrderedDict[str, Any], float, bool, bool, dict]: game state,

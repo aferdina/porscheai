@@ -19,7 +19,7 @@ Before you begin, ensure you have the following:
 2. Install python 3.10.4 by using
 
     ```sh
-    pyenv install 3.10.0
+    pyenv install 3.10.4
     ```
 
 3. Install Dependencies: Set up a virtual environment and install the required packages using
