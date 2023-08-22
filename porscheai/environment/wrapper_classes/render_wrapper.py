@@ -7,12 +7,10 @@ import pygame
 
 from porscheai.environment.base_env import SimpleDriver
 from porscheai.environment.configs import create_reference_trajecotry_ms
-from porscheai.environment.rendering.render_classes import (
-    BaseSpriteConfig,
-    Colors,
-    HistorySprite,
-    RectPositions,
-)
+from porscheai.environment.rendering.render_classes import (BaseSpriteConfig,
+                                                            Colors,
+                                                            HistorySprite,
+                                                            RectPositions)
 
 # Constants for rendering
 METADATA = {"render_modes": ["human"], "render_fps": 60}
