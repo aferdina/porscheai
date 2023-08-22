@@ -35,7 +35,7 @@ class OneForBrakeAndGearActionSpace(ActionSpaceConfigs):
             dtype=np.float32,
         )
 
-    def get_brake_from_action(self, action: float) -> float:
+    def get_brake_from_action(self, action: np.ndarray) -> float:
         """get brake value from played action
 
         Args:
@@ -44,10 +44,11 @@ class OneForBrakeAndGearActionSpace(ActionSpaceConfigs):
         Returns:
             float: brake value for physics
         """
-        _unnormalized_brake = -min(0.0, action)
+        _action = action[0]
+        _unnormalized_brake = -min(0.0, _action)
         return self.unnormalize_action_brake(_unnormalized_brake)
 
-    def get_throttle_from_action(self, action: float) -> float:
+    def get_throttle_from_action(self, action: np.ndarray) -> float:
         """get throttle value from played action
 
         Args:
@@ -56,7 +57,9 @@ class OneForBrakeAndGearActionSpace(ActionSpaceConfigs):
         Returns:
             float: throttle value for physics
         """
-        _unnormalized_throttle = max(0.0, action)
+        _action = action[0]
+        _unnormalized_throttle = max(0.0, _action)
+
         return self.unnormalize_action_throttle(_unnormalized_throttle)
 
     def unnormalize_action_throttle(self, throttle_norm: float) -> float:
