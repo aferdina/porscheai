@@ -87,7 +87,6 @@ class RenderWrapper(gym.Wrapper):
             title="Velocity in m/s",
         )
         velocity_history_group.add(velocity_sprite)
-
         brake_throttle_group = pygame.sprite.Group()
         brake_throttle_sprite = HistorySprite(
             state_history={
@@ -144,8 +143,8 @@ class RenderWrapper(gym.Wrapper):
         self.action_history.append(action)
         _brake = self.env.action_space_configs.get_brake_from_action(action)
         _throttle = self.env.action_space_configs.get_throttle_from_action(action)
-        self.brake_history.append(_brake)
-        self.throttle_history.append(_throttle)
+        self.brake_history.append(float(_brake))
+        self.throttle_history.append(float(_throttle))
         # get throttle and brake value
         # get velocitity value
         # get acceleration value
