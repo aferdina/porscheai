@@ -195,7 +195,7 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
         "gae_lambda", [0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0]
     )
     n_steps = trial.suggest_categorical(
-        "n_steps", [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+        "n_steps", [1024, 2048]
     )
     lr_schedule = trial.suggest_categorical("lr_schedule", ["linear", "constant"])
     learning_rate = trial.suggest_float("learning_rate", 1e-5, 1, log=True)
@@ -214,6 +214,7 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
         learning_rate = linear_schedule(learning_rate)
 
     net_arch = {
+        "tiny": dict(pi=[32,32], vf=[32,32]),
         "small": dict(pi=[64, 64], vf=[64, 64]),
         "medium": dict(pi=[256, 256], vf=[256, 256]),
     }[net_arch]
