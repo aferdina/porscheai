@@ -1,0 +1,12 @@
+# Tuned
+Simple-Driver:
+  n_envs: 1
+  n_timesteps: !!float 1e6
+  policy: 'MlpPolicy'
+  n_steps: 1024
+  batch_size: 1024
+  cg_damping: !!float 1e-3
+  gae_lambda: 0.98
+  gamma: 0.99
+  learning_rate: !!float 1e-3
+  n_critic_updates: 20
