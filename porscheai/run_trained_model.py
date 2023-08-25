@@ -92,7 +92,7 @@ class RenderTrainedAgent:
     ) -> VecEnv:
         """load game environment from path to game statistics file
 
-        Args:s
+        Args:
             game_path (str): path to the game statistics
 
         Returns:
@@ -107,10 +107,35 @@ class RenderTrainedAgent:
             wrapper_class=used_wrapper,
         )
         _path = os.path.join(game_path, "vecnormalize.pkl")
-        vec_env = VecNormalize.load(load_path=_path, venv=loaded_env)
-        vec_env.training = False
-        vec_env.norm_reward = False
-        return vec_env
+        if os.path.exists(_path):
+            print("Loading saved VecNormalize stats")
+            env = VecNormalize.load(_path, venv=loaded_env)
+            # Deactivate training and reward normalization
+            env.training = False
+            env.norm_reward = False
+            return env
+
+        return loaded_env
+
+    def _maybe_normalize(self, env: VecEnv, norm_path: str | None) -> VecEnv:
+        """
+        Wrap the env into a VecNormalize wrapper if needed
+        and load saved statistics when present.
+
+        :param env:
+        :param eval_env:
+        :return:
+        """
+        # Pretrained model, load normalization
+
+        if os.path.exists(norm_path):
+            print("Loading saved VecNormalize stats")
+            env = VecNormalize.load(norm_path, venv=env)
+            # Deactivate training and reward normalization
+            env.training = False
+            env.norm_reward = False
+
+        return env
 
     @staticmethod
     def _load_agent(model_path: str, algo_type: str) -> BaseAlgorithm:
@@ -198,12 +223,12 @@ def make_env() -> SimpleDriver:
 
 
 if __name__ == "__main__":
-    TRAINEDMODEL = "logs/sac/Simple-Driver_13"
+    TRAINEDMODEL = "logs/trpo/Simple-Driver_1"
     Render_Game = RenderTrainedAgent(
         trained_model_path=TRAINEDMODEL,
         wrapper_classes=[
             RENDERWRAPPER,
         ],
-        algo_type="sac",
+        algo_type="trpo",
     )
     Render_Game.run_game_trained()
