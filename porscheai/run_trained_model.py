@@ -12,7 +12,8 @@ from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from strenum import StrEnum
 
 from porscheai.environment.base_env import SimpleDriver
-from porscheai.environment.wrapper_classes.render_wrapper import WINDOW_H, WINDOW_W
+from porscheai.environment.wrapper_classes.render_wrapper import (WINDOW_H,
+                                                                  WINDOW_W)
 from porscheai.training.utils import ALGOS, get_wrapper_class
 
 RENDERWRAPPER = "porscheai.environment.wrapper_classes.render_wrapper.RenderWrapper"
