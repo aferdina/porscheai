@@ -1,0 +1,15 @@
+Simple-Driver:
+  env_wrapper:
+    - sb3_contrib.common.wrappers.TimeFeatureWrapper
+  n_timesteps: !!float 1e6
+  policy: 'MlpPolicy'
+  model_class: 'tqc'
+  n_sampled_goal: 4
+  goal_selection_strategy: 'future'
+  buffer_size: 10000
+  batch_size: 1024
+  gamma: 0.95
+  learning_rate: !!float 1e-3
+  tau: 0.05
+  # ent_coef: 0.01
+  online_sampling: True
