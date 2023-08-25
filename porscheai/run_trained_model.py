@@ -12,8 +12,7 @@ from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from strenum import StrEnum
 
 from porscheai.environment.base_env import SimpleDriver
-from porscheai.environment.wrapper_classes.render_wrapper import (WINDOW_H,
-                                                                  WINDOW_W)
+from porscheai.environment.wrapper_classes.render_wrapper import WINDOW_H, WINDOW_W
 from porscheai.training.utils import ALGOS, get_wrapper_class
 
 RENDERWRAPPER = "porscheai.environment.wrapper_classes.render_wrapper.RenderWrapper"
@@ -30,7 +29,19 @@ class FileNames(StrEnum):
 class RenderTrainedAgent:
     """Class to render a trained model on a game environment"""
 
-    def __init__(self, trained_model_path: str, wrapper_classes: list[gym.Wrapper]):
+    def __init__(
+        self,
+        trained_model_path: str,
+        wrapper_classes: list[gym.Wrapper],
+        algo_type: str = "sac",
+    ):
+        """inintialize class
+
+        Args:
+            trained_model_path (str): path to all required output files for algorithm
+            wrapper_classes (list[gym.Wrapper]): list of wrapper classes used for plotting algorithm
+            algo_type (str, optional): Used algorith type. Defaults to "sac".
+        """
         self.config_path = os.path.join(trained_model_path, FileNames.CONFIGFILE)
         self.configs: OrderedDict[str, str] = self.load_yml_file(
             path_to_yml=self.config_path
@@ -41,7 +52,7 @@ class RenderTrainedAgent:
         )
         self.model = self._load_agent(
             model_path=os.path.join(trained_model_path, FileNames.MODELFILE),
-            algo_type="sac",
+            algo_type=algo_type,
         )
 
     @staticmethod
@@ -187,11 +198,12 @@ def make_env() -> SimpleDriver:
 
 
 if __name__ == "__main__":
-    TRAINEDMODEL = "logs/sac/Simple-Driver_8"
+    TRAINEDMODEL = "logs/sac/Simple-Driver_13"
     Render_Game = RenderTrainedAgent(
         trained_model_path=TRAINEDMODEL,
         wrapper_classes=[
             RENDERWRAPPER,
         ],
+        algo_type="sac",
     )
     Render_Game.run_game_trained()
